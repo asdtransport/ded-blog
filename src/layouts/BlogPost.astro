@@ -1,0 +1,105 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import ReactionRail from "../components/ReactionRail.astro";
+import TableOfContents from "../components/TableOfContents.astro";
+import ReadNext from "../components/ReadNext.astro";
+import ShareRow from "../components/ShareRow.astro";
+import Newsletter from "../components/Newsletter.astro";
+import { getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const { post, headings } = Astro.props;
+const { title, description, pubDate, updatedDate, author, authorRole, tags, category, tldr, keywords } = post.data;
+
+const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+const initials = author.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+
+// "Read next": 2 most-recent posts other than this one
+const all = await getCollection("blog", ({ data }) => !data.draft);
+const readNext = all
+  .filter(p => p.slug !== post.slug)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
+  .slice(0, 2);
+
+const url = new URL(Astro.url.pathname, Astro.site!).toString();
+---
+<BaseLayout
+  title={title}
+  description={description}
+  type="article"
+  pubDate={pubDate}
+  updatedDate={updatedDate}
+  author={author}
+  tags={tags}
+  tldr={tldr}
+  keywords={keywords}
+>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <div class="breadcrumbs-inner">
+      <a href="/">Home</a>
+      <span class="sep">›</span>
+      <a href="/blog">Blog</a>
+      <span class="sep">›</span>
+      <span class="current">{title}</span>
+    </div>
+  </nav>
+
+  <div class="shell">
+    <ReactionRail />
+
+    <section class="hero">
+      <div class="hero-meta">
+        <time datetime={pubDate.toISOString()}>{fmt(pubDate)}</time>
+        {category && <span class="chip">{category}</span>}
+      </div>
+      <h1>{title}</h1>
+      {description && <p class="lede">{description}</p>}
+      <div class="author-card">
+        <div class="avatar" aria-hidden="true">{initials}</div>
+        <div>
+          <div><a href="/about" class="name">{author}</a></div>
+          <div class="role">{authorRole}</div>
+        </div>
+      </div>
+    </section>
+
+    <article class="prose">
+      {tldr && (
+        <blockquote>
+          <strong>TL;DR</strong> — {tldr}
+        </blockquote>
+      )}
+      <slot />
+    </article>
+
+    <aside class="sidebar">
+      <TableOfContents headings={headings} />
+      <ReadNext posts={readNext} />
+    </aside>
+
+    <section class="below-fold">
+      <ShareRow title={title} url={url} />
+      <div class="taxonomy">
+        {category && (
+          <div class="row">
+            <div class="row-label">Category</div>
+            <a href={`/blog?category=${encodeURIComponent(category)}`} class="tag">{category}</a>
+          </div>
+        )}
+        {tags.length > 0 && (
+          <div class="row">
+            <div class="row-label">Tags</div>
+            {tags.map(t => <a href={`/blog?tag=${encodeURIComponent(t)}`} class="tag">{t}</a>)}
+          </div>
+        )}
+      </div>
+    </section>
+  </div>
+
+  <Newsletter />
+</BaseLayout>

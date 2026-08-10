@@ -1,0 +1,47 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+
+// Group by year for a nice archive-style listing
+const byYear = posts.reduce<Record<number, typeof posts>>((acc, p) => {
+  const y = p.data.pubDate.getFullYear();
+  (acc[y] ??= []).push(p);
+  return acc;
+}, {});
+const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+---
+<BaseLayout
+  title="Blog"
+  description="All posts by Derek Ethan Davis — AI agents, Cloudflare edge, WorkIQ, MSP tooling."
+  keywords={["blog", "engineering", "AI agents", "Cloudflare"]}
+>
+  <div class="shell single">
+    <section class="hero">
+      <h1>Blog</h1>
+      <p class="lede">Everything I've written, newest first.</p>
+    </section>
+    <article class="prose">
+      {years.map(year => (
+        <>
+          <h2 style="margin-top: 32px;">{year}</h2>
+          <ul style="list-style: none; padding: 0;">
+            {byYear[year].map(p => (
+              <li style="display: flex; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: baseline;">
+                <time style="color: var(--text-muted); font-size: 14px; font-variant-numeric: tabular-nums; min-width: 100px;">{fmt(p.data.pubDate)}</time>
+                <div style="flex: 1;">
+                  <a href={`/blog/${p.slug}`} style="font-size: 17px; font-weight: 600; color: var(--text);">{p.data.title}</a>
+                  <div style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">{p.data.description}</div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ))}
+    </article>
+  </div>
+</BaseLayout>

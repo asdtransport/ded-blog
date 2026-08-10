@@ -1,0 +1,29 @@
+---
+interface Heading { depth: number; slug: string; text: string; }
+interface Props { headings: Heading[]; }
+const { headings } = Astro.props;
+const items = headings.filter(h => h.depth === 2 || h.depth === 3);
+---
+{items.length > 0 && (
+  <nav class="toc" aria-label="Table of contents">
+    <h3>Table of contents</h3>
+    {items.map(h => (
+      <a href={`#${h.slug}`} data-toc={h.slug} style={h.depth === 3 ? "padding-left: 28px; font-size: 12.5px;" : ""}>{h.text}</a>
+    ))}
+  </nav>
+)}
+
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc a[data-toc]');
+  if (links.length > 0) {
+    const targets = [...links].map(a => document.getElementById(a.dataset.toc!)).filter(Boolean) as HTMLElement[];
+    const onScroll = () => {
+      const y = window.scrollY + 120;
+      let active = targets[0];
+      for (const t of targets) if (t.offsetTop <= y) active = t;
+      links.forEach(l => l.classList.toggle('active', l.dataset.toc === active?.id));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+</script>

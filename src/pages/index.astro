@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+---
+<BaseLayout
+  title="Derek Ethan Davis"
+  description="Engineer and builder. Notes from an ongoing arc of AI agents, edge infrastructure, MSP tooling, and philosophy detours."
+  tldr="Personal engineering blog covering AI agent systems, Cloudflare edge infrastructure, WorkIQ house stack, and MSP tooling."
+  keywords={["AI agents", "Cloudflare Workers", "Astro", "Hono", "MSP", "edge computing", "MCP"]}
+>
+  <div class="shell single">
+    <section class="hero">
+      <div class="hero-meta">
+        <span class="chip">Engineer · Builder</span>
+      </div>
+      <h1>Notes from the workshop.</h1>
+      <p class="lede">
+        I build AI agent systems, edge infrastructure, and MSP tooling — mostly on the Bun · Hono · Astro · Cloudflare stack.
+        This is where I write about what I'm shipping and what I'm learning while I ship it.
+      </p>
+    </section>
+
+    <article class="prose">
+      <h2 style="margin-top: 0;">Latest</h2>
+      <div class="post-grid">
+        {posts.slice(0, 6).map(p => (
+          <a href={`/blog/${p.slug}`} class="post-card">
+            <div class="date">{fmt(p.data.pubDate)}</div>
+            <h3>{p.data.title}</h3>
+            <p>{p.data.description}</p>
+            <div class="meta">
+              {p.data.tags.slice(0, 3).map(t => <span class="tag">{t}</span>)}
+            </div>
+          </a>
+        ))}
+      </div>
+      {posts.length > 6 && (
+        <p style="text-align: center; margin-top: 32px;">
+          <a href="/blog">See all posts →</a>
+        </p>
+      )}
+    </article>
+  </div>
+</BaseLayout>

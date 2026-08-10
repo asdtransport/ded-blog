@@ -1,0 +1,14 @@
+---
+// Wire the form action to Buttondown / Kit / your Cloudflare Worker endpoint later.
+const action = "/api/subscribe";
+---
+<section class="newsletter">
+  <div class="newsletter-inner">
+    <h3>Stay in the loop</h3>
+    <div class="sub">Occasional notes on what I'm building — agents, edge infra, MSP tooling. No spam.</div>
+    <form action={action} method="post" onsubmit="event.preventDefault(); alert('Wire this to your subscriber endpoint.');">
+      <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+      <button type="submit">Subscribe</button>
+    </form>
+  </div>
+</section>

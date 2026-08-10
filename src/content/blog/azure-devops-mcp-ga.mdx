@@ -1,0 +1,69 @@
+---
+title: "Azure DevOps ships a remote MCP server — what it means for agentic workflows"
+description: "Microsoft moved the Azure DevOps MCP server from local-only to a hosted endpoint. Here's what that changes for agent architectures, auth, and client support."
+pubDate: 2026-08-10
+author: "Derek Ethan Davis"
+authorRole: "Lead Engineer · Builder"
+category: "AI Agents"
+tags: ["MCP", "Azure DevOps", "AI Agents", "Microsoft Entra"]
+tldr: "Azure DevOps' MCP server is now hosted at mcp.dev.azure.com/{org} over streamable HTTP. VS Code + Copilot, Foundry, and Copilot Studio work today; Claude Desktop, Claude Code, ChatGPT, and Cursor are blocked on Entra dynamic client registration. Local server remains an option and stays feature-parity."
+keywords: ["Azure DevOps MCP", "Model Context Protocol", "Microsoft Entra", "streamable HTTP", "agentic development", "Copilot"]
+---
+
+Microsoft announced GA of the Azure DevOps Remote MCP Server this week. The short version: you no longer need to run a local MCP process to give an AI assistant contextual access to your ADO projects. You point it at a hosted endpoint and Entra handles the rest.
+
+For anyone building agent workflows against work items, repos, or pipelines, this materially shortens the setup path. It also draws a fresh line between the clients that can talk to it today and the ones that can't.
+
+## What actually shipped
+
+The hosted endpoint speaks streamable HTTP transport. The minimum configuration is a three-line entry in your `mcp.json`:
+
+```json
+{
+  "servers": {
+    "ado-remote-mcp": {
+      "url": "https://mcp.dev.azure.com/{organization}",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}
+```
+
+That's it — no local process, no PAT rotation, no self-hosted infra. Auth flows through Microsoft Entra, which is the pivot point for the client-support story below.
+
+## The Entra dependency is the real story
+
+Because auth runs through Entra, two things follow:
+
+1. **Your ADO org has to be backed by an Entra tenant.** Standalone orgs on Microsoft accounts (MSAs) are excluded from the hosted server. If you're on an MSA, keep running local.
+2. **Your client has to support either dynamic OAuth client registration or client-ID metadata documents in Entra.** Today, that's a fairly small set.
+
+Supported at GA with zero extra onboarding:
+
+- **VS Code with GitHub Copilot** — the most fleshed-out story; Copilot gets work-item, PR, repo, and pipeline context inline.
+- **Microsoft Foundry** — connects via the tools catalog.
+- **Microsoft Copilot Studio** — low-code agent builder now has ADO as a first-class tool.
+- Visual Studio, GitHub Copilot CLI, and the GitHub Copilot app also work.
+
+Explicitly *not* supported yet: **Claude Desktop, Claude Code, ChatGPT, Cursor** and similar. Microsoft says they're working with the Entra team to enable the required client-registration paths.
+
+That's a notable gap. Most of the agent development I do runs through Claude Code and Cursor, and those are exactly the tools that would benefit most from streamed MCP context over an Entra-authenticated endpoint. Until dynamic client registration lands, those clients have to keep pointing at the [local Azure DevOps MCP server](https://github.com/microsoft/azure-devops-mcp).
+
+## Local vs remote: what to run today
+
+Microsoft explicitly says feature parity between local and remote is a maintained commitment. They recently consolidated the local server's toolset to match the remote surface, which is a good signal.
+
+Practical guidance for anyone deciding right now:
+
+- **On VS Code / Copilot / Foundry / Copilot Studio** — go remote. Nothing to install, Entra handles auth, done.
+- **On Claude Code, Cursor, ChatGPT** — stay local. You get the same tools; you just wear the runtime yourself.
+- **Building a custom MCP client** — implement dynamic client registration against Entra and you'll be ready when the remote endpoint accepts you. Building for the local server is a shorter path today.
+
+## What this changes about agent architecture
+
+For folks like me who orchestrate agent loops that touch multiple systems (GitHub, ADO, ticketing, monitoring), the remote endpoint means one fewer sidecar process per developer machine. That matters more than it sounds — sidecars are where auth expires, versions drift, and support tickets come from.
+
+The bigger architectural signal is that Microsoft has decided MCP is worth hosting as first-party infrastructure with Entra as the auth boundary. That sets a template. Expect similar hosted MCP servers from the other Microsoft platform teams over the next few quarters, all funneling through Entra.
+
+If you're on the ADO stack and running agents against it, the setup got easier. If you're on Claude or Cursor, you're waiting on client-registration work. Either way, worth pinning the [official docs](https://learn.microsoft.com/en-us/azure/devops/mcp-server/remote-mcp-server) and watching the Entra changelog.

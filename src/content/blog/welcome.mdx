@@ -1,0 +1,35 @@
+---
+title: "Starting a blog for the workshop"
+description: "Why I'm putting my public build work behind a single canonical home, and how this site is put together."
+pubDate: 2026-08-09
+author: "Derek Ethan Davis"
+authorRole: "Lead Engineer · Builder"
+category: "Meta"
+tags: ["Astro", "Cloudflare Pages", "MDX", "SEO"]
+tldr: "New personal blog on Astro + Cloudflare Pages, MDX for content, Sanity CMS wiring next. Built to be the canonical home for my public build work — AI agents, edge infra, WorkIQ, MSP tooling."
+keywords: ["Astro blog", "Cloudflare Pages", "MDX", "personal blog", "engineering blog"]
+---
+
+For a while my public build work has been scattered across GitHub READMEs, subdomain deploys, and half-finished SelfIQ drafts. This site is where it consolidates.
+
+## What lives here
+
+- **Blog posts** on the things I'm actively building — AI agent systems, Cloudflare edge infra, the WorkIQ house stack, MSP tooling, and the occasional philosophy or memoir detour.
+- **Projects** — a running list of what's live, what's active, and what's alpha.
+- **About** — the shorter answer to "what do you do."
+
+## How it's built
+
+Standard house stack, minus the API tier:
+
+- **Astro** static, MDX content collections, typed frontmatter via Zod
+- **Cloudflare Pages** for hosting — same edge as everything else I run
+- **Sanity CMS** is coming — will replace the local MDX files without changing routes or components
+- SEO baked in: sitemap, RSS, JSON-LD Article schema, OpenGraph, Twitter cards
+- AIO baked in: `llms.txt` and `llms-full.txt` so AI crawlers can find and cite content efficiently
+
+The whole thing will move into a WorkIQ skill once I've refactored the packaging so the same scaffold can be used for other author-owned public sites (client dossiers, project microsites, docs).
+
+## What to expect
+
+Cadence will be irregular — posts drop when something's worth writing about, not on a calendar. Feed's at [/rss.xml](/rss.xml). AI-friendly index at [/llms.txt](/llms.txt).

@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// Add/remove projects here. Later this can move to a content collection.
+const projects = [
+  {
+    name: "LTG OS",
+    tagline: "Autonomous agent orchestrator on Cloudflare Workers with GitHub PR-based execution and human supervision.",
+    stack: ["Cloudflare Workers", "GitHub API", "NoteIQ"],
+    url: "https://github.com/asdtransport/ltg-os",
+    status: "Active",
+  },
+  {
+    name: "LifeMap",
+    tagline: "Personal life-management WorkIQ app — time logs, daily logs, routines, and A/B co-parenting cycles on a 168-hour budget grid.",
+    stack: ["Astro", "Hono", "Cloudflare D1", "Zero Trust"],
+    url: "https://lifemap.derekethandavis.com",
+    status: "Live",
+  },
+  {
+    name: "WorkIQ",
+    tagline: "House stack scaffolder for Bun · Hono · Astro · Drizzle · Cloudflare apps. One code path, two backends (bun-sqlite / DO-SQLite).",
+    stack: ["Bun", "Hono", "Astro", "Drizzle"],
+    url: "https://github.com/asdtransport",
+    status: "Active",
+  },
+  {
+    name: "NoteIQ",
+    tagline: "Voice / text / code note-taker with a git-backed vault and Playwright screen capture.",
+    stack: ["Playwright", "Cloudflare", "Astro"],
+    url: "https://github.com/asdtransport/noteiq",
+    status: "Active",
+  },
+  {
+    name: "Project Observation",
+    tagline: "Semantic operations manifest so AI agents can discover and operate websites via a well-known /.well-known/operations.jsonld.",
+    stack: ["JSON-LD", "CLI", "Standards"],
+    url: "https://github.com/asdtransport",
+    status: "Alpha",
+  },
+  {
+    name: "Philosophy Atlas",
+    tagline: "Interactive visualization of 60 thinkers via force-directed graph and world map.",
+    stack: ["D3", "Astro", "Cloudflare"],
+    url: "https://philosophy-atlas.derekethandavis.com",
+    status: "Live",
+  },
+];
+---
+<BaseLayout
+  title="Projects"
+  description="Public build work — AI agents, edge infrastructure, and open tooling from Derek Ethan Davis."
+  keywords={["projects", "open source", "AI agents", "Cloudflare"]}
+>
+  <div class="shell single">
+    <section class="hero">
+      <h1>Projects</h1>
+      <p class="lede">Public build work. Most of these are ongoing and openly documented.</p>
+    </section>
+    <article class="prose">
+      <div class="post-grid">
+        {projects.map(p => (
+          <a href={p.url} class="post-card" target="_blank" rel="noopener">
+            <div class="date">{p.status}</div>
+            <h3>{p.name}</h3>
+            <p>{p.tagline}</p>
+            <div class="meta">
+              {p.stack.map(s => <span class="tag">{s}</span>)}
+            </div>
+          </a>
+        ))}
+      </div>
+    </article>
+  </div>
+</BaseLayout>

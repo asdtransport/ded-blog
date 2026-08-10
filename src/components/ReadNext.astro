@@ -1,0 +1,20 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+interface Props { posts: CollectionEntry<"blog">[]; }
+const { posts } = Astro.props;
+
+const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+---
+{posts.length > 0 && (
+  <section class="read-next">
+    <h3>Read next</h3>
+    {posts.map(p => (
+      <article class="rn-card">
+        <div class="date">{fmt(p.data.pubDate)}</div>
+        <h4><a href={`/blog/${p.slug}`}>{p.data.title}</a></h4>
+        <div class="byline">{p.data.author}</div>
+      </article>
+    ))}
+  </section>
+)}

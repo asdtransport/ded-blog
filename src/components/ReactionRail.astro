@@ -1,0 +1,27 @@
+---
+interface Props { reactions?: number; comments?: number; }
+const { reactions = 0, comments = 0 } = Astro.props;
+---
+<aside class="reaction-rail" aria-label="Article reactions">
+  <button class="rail-btn" aria-label="React">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="9" cy="10" r="1" fill="currentColor"/>
+      <circle cx="15" cy="10" r="1" fill="currentColor"/>
+      <path d="M8 15c1.2 1.3 2.5 2 4 2s2.8-.7 4-2"/>
+    </svg>
+    <span class="count">{reactions}</span>
+  </button>
+  <button class="rail-btn" aria-label="Comments">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <path d="M4 6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2h-8l-4 4v-4H6c-1.1 0-2-.9-2-2z"/>
+    </svg>
+    <span class="count">{comments}</span>
+  </button>
+  <button class="rail-btn" aria-label="Share" onclick="navigator.share ? navigator.share({url: location.href}) : navigator.clipboard.writeText(location.href)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <path d="M14 5l7 7-7 7"/><path d="M21 12H8"/><path d="M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/>
+    </svg>
+    <span class="count">↗</span>
+  </button>
+</aside>
