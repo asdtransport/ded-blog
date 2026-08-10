@@ -1,11 +1,22 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Newsletter from "../components/Newsletter.astro";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
 
+const featured = posts[0];
+const recent = posts.slice(1, 7);
+
 const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+const fmtLong = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+const projects = [
+  { name: "LTG OS", tagline: "Autonomous agent orchestrator on Cloudflare Workers.", tag: "Agents" },
+  { name: "LifeMap", tagline: "Personal life-management platform on Zero Trust.", tag: "Live" },
+  { name: "WorkIQ", tagline: "House stack scaffolder for Bun · Hono · Astro.", tag: "Framework" },
+];
 ---
 <BaseLayout
   title="Derek Ethan Davis"
@@ -13,37 +24,261 @@ const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month:
   tldr="Personal engineering blog covering AI agent systems, Cloudflare edge infrastructure, WorkIQ house stack, and MSP tooling."
   keywords={["AI agents", "Cloudflare Workers", "Astro", "Hono", "MSP", "edge computing", "MCP"]}
 >
-  <div class="shell single">
-    <section class="hero">
-      <div class="hero-meta">
+  <section class="home-hero">
+    <div class="home-hero-inner">
+      <div class="home-hero-eyebrow">
         <span class="chip">Engineer · Builder</span>
+        <span class="home-hero-loc">Jefferson, GA · Atlanta MSP</span>
       </div>
       <h1>Notes from the workshop.</h1>
       <p class="lede">
-        I build AI agent systems, edge infrastructure, and MSP tooling — mostly on the Bun · Hono · Astro · Cloudflare stack.
-        This is where I write about what I'm shipping and what I'm learning while I ship it.
+        I build AI agent systems, edge infrastructure, and MSP tooling —
+        mostly on the Bun · Hono · Astro · Cloudflare stack. This is where I write
+        about what I'm shipping and what I'm learning while I ship it.
       </p>
-    </section>
+      <div class="home-hero-cta">
+        <a href="/blog" class="btn btn-primary">Read the blog →</a>
+        <a href="/projects" class="btn btn-ghost">See projects</a>
+        <a href="/rss.xml" class="btn btn-ghost">RSS</a>
+      </div>
+    </div>
+  </section>
 
-    <article class="prose">
-      <h2 style="margin-top: 0;">Latest</h2>
-      <div class="post-grid">
-        {posts.slice(0, 6).map(p => (
-          <a href={`/blog/${p.slug}`} class="post-card">
-            <div class="date">{fmt(p.data.pubDate)}</div>
-            <h3>{p.data.title}</h3>
-            <p>{p.data.description}</p>
-            <div class="meta">
-              {p.data.tags.slice(0, 3).map(t => <span class="tag">{t}</span>)}
+  {featured && (
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2>Latest post</h2>
+          <a href="/blog" class="section-more">All posts →</a>
+        </div>
+        <a href={`/blog/${featured.slug}`} class="featured-card">
+          <div class="featured-body">
+            <div class="featured-meta">
+              <time>{fmtLong(featured.data.pubDate)}</time>
+              <span class="dot">·</span>
+              <span class="chip">{featured.data.category}</span>
             </div>
-          </a>
+            <h3>{featured.data.title}</h3>
+            <p class="featured-desc">{featured.data.description}</p>
+            {featured.data.tldr && (
+              <p class="featured-tldr"><strong>TL;DR</strong> — {featured.data.tldr}</p>
+            )}
+            <div class="featured-tags">
+              {featured.data.tags.slice(0, 4).map(t => <span class="tag">{t}</span>)}
+            </div>
+            <span class="featured-cta">Read the piece →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  )}
+
+  {recent.length > 0 && (
+    <section class="section section-tint">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2>More recent</h2>
+          <a href="/blog" class="section-more">Archive →</a>
+        </div>
+        <div class="post-grid">
+          {recent.map(p => (
+            <a href={`/blog/${p.slug}`} class="post-card">
+              <div class="date">{fmt(p.data.pubDate)} · {p.data.category}</div>
+              <h3>{p.data.title}</h3>
+              <p>{p.data.description}</p>
+              <div class="meta">
+                {p.data.tags.slice(0, 3).map(t => <span class="tag">{t}</span>)}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>What I'm building</h2>
+        <a href="/projects" class="section-more">See all projects →</a>
+      </div>
+      <div class="project-strip">
+        {projects.map(p => (
+          <div class="project-strip-card">
+            <div class="project-strip-tag">{p.tag}</div>
+            <h3>{p.name}</h3>
+            <p>{p.tagline}</p>
+          </div>
         ))}
       </div>
-      {posts.length > 6 && (
-        <p style="text-align: center; margin-top: 32px;">
-          <a href="/blog">See all posts →</a>
-        </p>
-      )}
-    </article>
-  </div>
+    </div>
+  </section>
+
+  <section class="section section-dark">
+    <div class="section-inner section-narrow">
+      <h2>Hi, I'm Derek.</h2>
+      <p class="section-lede">
+        Lead Engineer and IT Manager at <a href="https://lockstep.tech">Lockstep Technology Group</a>,
+        an Atlanta-area MSP. After hours I build agent systems and edge apps on the WorkIQ house stack.
+        More on the <a href="/about">about page</a>, or grab the <a href="/rss.xml">RSS feed</a>.
+      </p>
+    </div>
+  </section>
+
+  <Newsletter />
 </BaseLayout>
+
+<style>
+  .home-hero {
+    background:
+      radial-gradient(1200px 500px at 15% 0%, rgba(15,118,110,0.10), transparent 55%),
+      radial-gradient(900px 400px at 85% 20%, rgba(8,145,178,0.08), transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 72px 24px 88px;
+  }
+  .home-hero-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .home-hero-eyebrow {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .home-hero-loc {
+    color: var(--text-muted); font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .home-hero h1 {
+    font-family: var(--font-serif);
+    font-size: 68px;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    margin: 0 0 20px;
+    max-width: 900px;
+  }
+  .home-hero .lede {
+    font-size: 20px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    max-width: 680px;
+    margin: 0 0 28px;
+  }
+  .home-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: 6px;
+    font-weight: 600; font-size: 14px;
+    border: 1px solid var(--border-strong);
+    background: #fff;
+    color: var(--text);
+    transition: all .15s ease;
+  }
+  .btn:hover { text-decoration: none; }
+  .btn-primary {
+    background: var(--brand); color: #fff; border-color: var(--brand);
+  }
+  .btn-primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+  .btn-ghost:hover { background: var(--bg-tint); }
+
+  .section { padding: 56px 24px; }
+  .section-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .section-narrow { max-width: 720px; }
+  .section-tint { background: var(--bg-tint); }
+  .section-dark {
+    background: #171717; color: #f5f5f5; padding: 64px 24px;
+  }
+  .section-dark h2 { color: #fff; }
+  .section-dark a { color: #7dd3c0; }
+  .section-dark a:hover { color: #a7f3d0; }
+  .section-dark .section-lede { font-size: 18px; color: #d4d4d0; max-width: 640px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+  }
+  .section-head h2 {
+    font-family: var(--font-serif);
+    font-size: 32px; font-weight: 700; margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .section-more {
+    font-size: 14px; color: var(--brand); font-weight: 600;
+  }
+
+  .featured-card {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    color: var(--text);
+    transition: all .2s ease;
+    position: relative; overflow: hidden;
+  }
+  .featured-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: linear-gradient(180deg, var(--brand), #0891b2);
+  }
+  .featured-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .featured-body { max-width: 780px; }
+  .featured-meta {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--text-muted); font-size: 14px; margin-bottom: 14px;
+  }
+  .featured-meta .dot { color: var(--text-subtle); }
+  .featured-card h3 {
+    font-family: var(--font-serif);
+    font-size: 34px; line-height: 1.15;
+    font-weight: 700; margin: 0 0 14px;
+    letter-spacing: -0.015em; color: var(--text);
+  }
+  .featured-desc {
+    font-size: 17px; color: var(--text-muted);
+    margin: 0 0 18px; line-height: 1.55;
+  }
+  .featured-tldr {
+    font-size: 14px; color: var(--text-muted);
+    background: var(--bg-tint);
+    padding: 12px 16px; border-radius: 8px;
+    border-left: 3px solid var(--brand);
+    margin: 0 0 20px;
+  }
+  .featured-tags { margin: 0 0 20px; }
+  .featured-cta { color: var(--brand); font-weight: 600; font-size: 15px; }
+
+  .project-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .project-strip-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px;
+  }
+  .project-strip-tag {
+    display: inline-block;
+    background: var(--brand); color: #fff;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 3px 8px; border-radius: 3px;
+    margin-bottom: 12px;
+  }
+  .project-strip-card h3 {
+    font-family: var(--font-serif);
+    font-size: 22px; margin: 0 0 8px; letter-spacing: -0.01em;
+  }
+  .project-strip-card p {
+    color: var(--text-muted); font-size: 14px; margin: 0; line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .home-hero { padding: 48px 20px 56px; }
+    .home-hero h1 { font-size: 44px; }
+    .home-hero .lede { font-size: 17px; }
+    .section-head h2 { font-size: 26px; }
+    .featured-card { padding: 24px; }
+    .featured-card h3 { font-size: 26px; }
+    .project-strip { grid-template-columns: 1fr; }
+  }
+</style>

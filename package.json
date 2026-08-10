@@ -10,10 +10,12 @@
     "deploy": "astro build && wrangler pages deploy dist --project-name=ded-blog"
   },
   "dependencies": {
-    "astro": "^5.0.0",
     "@astrojs/mdx": "^4.0.0",
     "@astrojs/rss": "^4.0.0",
-    "@astrojs/sitemap": "^3.0.0"
+    "@astrojs/sitemap": "^3.0.0",
+    "@portabletext/to-html": "^5.0.3",
+    "@sanity/client": "^7.26.2",
+    "astro": "^5.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
