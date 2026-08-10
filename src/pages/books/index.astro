@@ -41,7 +41,7 @@ const statusLabel: Record<string, string> = {
     <div class="section-inner">
       <div class="books-grid">
         {enriched.map(b => (
-          <a href={`/books/${b.slug}`} class="book-card">
+          <a href={`/books/${b.slug}`} class="book-card" data-reveal>
             <div class="book-cover-wrap">
               {b.cover ? (
                 <img src={b.cover} alt={b.title} loading="lazy" />

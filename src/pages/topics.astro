@@ -46,7 +46,7 @@ const catDescriptions: Record<string, string> = {
       <h2 class="section-title">Categories</h2>
       <div class="cat-grid">
         {categories.map(([name, count]) => (
-          <a href={`/blog?category=${encodeURIComponent(name)}`} class="cat-card">
+          <a href={`/blog?category=${encodeURIComponent(name)}`} class="cat-card" data-reveal>
             <div class="cat-count">{count}</div>
             <div class="cat-name">{name}</div>
             <div class="cat-desc">{catDescriptions[name] || "Posts in this category."}</div>

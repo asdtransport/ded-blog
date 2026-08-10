@@ -57,7 +57,7 @@ const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {
           </div>
           <div class="products-grid">
             {items.map(p => (
-              <article class={`product-card status-${p.status}`}>
+              <article class={`product-card status-${p.status}`} data-reveal>
                 <div class="product-status">{statusLabel[p.status]}</div>
                 <h3>{p.name}</h3>
                 <p class="product-tagline">{p.tagline}</p>
