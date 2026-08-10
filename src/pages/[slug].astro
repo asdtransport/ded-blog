@@ -1,18 +1,17 @@
 ---
-import { getCollection } from "astro:content";
 import Page from "../layouts/Page.astro";
+import { getAllPages, getPageBySlug } from "../lib/content";
 
 export async function getStaticPaths() {
-  const pages = await getCollection("pages", ({ data }) => !data.draft);
-  // Skip 'about' since it has its own route
-  return pages
-    .filter(p => p.slug !== "about")
-    .map(p => ({ params: { slug: p.slug }, props: { entry: p } }));
+  const pages = await getAllPages();
+  // 'about' has its own route
+  return pages.filter(p => p.slug !== "about").map(p => ({ params: { slug: p.slug } }));
 }
 
-const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { slug } = Astro.params;
+const page = await getPageBySlug(slug!);
+if (!page) throw new Error(`Page not found: ${slug}`);
 ---
-<Page title={entry.data.title} description={entry.data.description}>
-  <Content />
+<Page title={page.data.title} description={page.data.description}>
+  <Fragment set:html={page.bodyHtml} />
 </Page>

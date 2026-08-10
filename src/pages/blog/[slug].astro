@@ -1,18 +1,31 @@
 ---
-import { getCollection } from "astro:content";
 import BlogPost from "../../layouts/BlogPost.astro";
+import { getAllPosts, getPostBySlug } from "../../lib/content";
 
 export async function getStaticPaths() {
-  const posts = await getCollection("blog", ({ data }) => !data.draft);
-  return posts.map(post => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
+  const posts = await getAllPosts();
+  return posts.map(p => ({ params: { slug: p.slug } }));
 }
 
-const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { slug } = Astro.params;
+const result = await getPostBySlug(slug!);
+if (!result) throw new Error(`Post not found: ${slug}`);
+
+const { unified, mdxEntry } = result;
+
+// MDX renders via <Content />; Sanity renders via pre-rendered HTML.
+let MdxContent: any = null;
+let mdxHeadings: any[] = unified.headings;
+if (mdxEntry) {
+  const rendered = await mdxEntry.render();
+  MdxContent = rendered.Content;
+  mdxHeadings = rendered.headings;
+}
 ---
-<BlogPost post={post} headings={headings}>
-  <Content />
+<BlogPost post={{ slug: unified.slug, data: unified.data }} headings={mdxHeadings}>
+  {MdxContent ? (
+    <MdxContent />
+  ) : (
+    <Fragment set:html={unified.bodyHtml} />
+  )}
 </BlogPost>

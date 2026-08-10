@@ -7,16 +7,19 @@ import { toHTML, type PortableTextHtmlComponents } from "@portabletext/to-html";
  */
 const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID;
 const dataset   = import.meta.env.PUBLIC_SANITY_DATASET || "production";
+// Server-only — no PUBLIC_ prefix, so Astro never inlines it into client bundles.
+// Used at build (SSG) for authenticated reads.
+const readToken = import.meta.env.SANITY_READ_TOKEN;
 
-export const sanityEnabled = Boolean(projectId && projectId !== "REPLACE_ME");
+export const sanityEnabled = Boolean(projectId && projectId !== "REPLACE_ME")
 
 export const sanity: SanityClient | null = sanityEnabled
   ? createClient({
       projectId,
       dataset,
       apiVersion: "2024-01-01",
-      useCdn: true,               // CDN is the right default for a static-generated blog
-      perspective: "published",   // never render drafts on the public site
+      useCdn: false,              // authenticated API for build-time freshness
+      token: readToken,           // server-side only — never in client bundle
     })
   : null;
 
@@ -48,7 +51,7 @@ function slugify(text: string): string {
   return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
 }
 
-const portableTextComponents: Partial<PortableTextHtmlComponents> = {
+export const portableTextComponents: Partial<PortableTextHtmlComponents> = {
   types: {
     codeBlock: ({ value }: any) => {
       const lang = value.language || "";

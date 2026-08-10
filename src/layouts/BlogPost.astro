@@ -5,11 +5,23 @@ import TableOfContents from "../components/TableOfContents.astro";
 import ReadNext from "../components/ReadNext.astro";
 import ShareRow from "../components/ShareRow.astro";
 import Newsletter from "../components/Newsletter.astro";
-import { getCollection } from "astro:content";
-import type { CollectionEntry } from "astro:content";
+import { getAllPosts } from "../lib/content";
+
+interface PostData {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  author: string;
+  authorRole: string;
+  tags: string[];
+  category: string;
+  tldr?: string;
+  keywords: string[];
+}
 
 interface Props {
-  post: CollectionEntry<"blog">;
+  post: { slug: string; data: PostData };
   headings: { depth: number; slug: string; text: string }[];
 }
 
@@ -19,12 +31,12 @@ const { title, description, pubDate, updatedDate, author, authorRole, tags, cate
 const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 const initials = author.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
-// "Read next": 2 most-recent posts other than this one
-const all = await getCollection("blog", ({ data }) => !data.draft);
+// "Read next": 2 most-recent posts other than this one — pulled from unified source
+const all = await getAllPosts();
 const readNext = all
   .filter(p => p.slug !== post.slug)
-  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
-  .slice(0, 2);
+  .slice(0, 2)
+  .map(p => ({ slug: p.slug, data: p.data }));
 
 const url = new URL(Astro.url.pathname, Astro.site!).toString();
 ---
@@ -79,7 +91,7 @@ const url = new URL(Astro.url.pathname, Astro.site!).toString();
 
     <aside class="sidebar">
       <TableOfContents headings={headings} />
-      <ReadNext posts={readNext} />
+      <ReadNext posts={readNext as any} />
     </aside>
 
     <section class="below-fold">

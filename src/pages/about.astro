@@ -1,11 +1,10 @@
 ---
 import Page from "../layouts/Page.astro";
-import { getEntry } from "astro:content";
+import { getPageBySlug } from "../lib/content";
 
-const entry = await getEntry("pages", "about");
-if (!entry) throw new Error("Missing src/content/pages/about.mdx");
-const { Content } = await entry.render();
+const page = await getPageBySlug("about");
+if (!page) throw new Error("Missing 'about' page in Sanity — seed it first.");
 ---
-<Page title={entry.data.title} description={entry.data.description}>
-  <Content />
+<Page title={page.data.title} description={page.data.description}>
+  <Fragment set:html={page.bodyHtml} />
 </Page>
