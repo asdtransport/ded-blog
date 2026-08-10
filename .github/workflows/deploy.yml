@@ -7,6 +7,9 @@ on:
       - "studio/**"
       - "README.md"
   workflow_dispatch:
+  # Fired by the Sanity webhook when content is published.
+  repository_dispatch:
+    types: [sanity-publish]
 
 jobs:
   deploy:
