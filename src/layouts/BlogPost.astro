@@ -18,6 +18,8 @@ interface PostData {
   category: string;
   tldr?: string;
   keywords: string[];
+  heroImage?: string;
+  heroImageAlt?: string;
 }
 
 interface Props {
@@ -26,7 +28,7 @@ interface Props {
 }
 
 const { post, headings } = Astro.props;
-const { title, description, pubDate, updatedDate, author, authorRole, tags, category, tldr, keywords } = post.data;
+const { title, description, pubDate, updatedDate, author, authorRole, tags, category, tldr, keywords, heroImage, heroImageAlt } = post.data;
 
 const fmt = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 const initials = author.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -50,6 +52,7 @@ const url = new URL(Astro.url.pathname, Astro.site!).toString();
   tags={tags}
   tldr={tldr}
   keywords={keywords}
+  image={heroImage}
 >
   <nav class="breadcrumbs" aria-label="Breadcrumb">
     <div class="breadcrumbs-inner">
@@ -60,6 +63,12 @@ const url = new URL(Astro.url.pathname, Astro.site!).toString();
       <span class="current">{title}</span>
     </div>
   </nav>
+
+  {heroImage && (
+    <figure class="post-hero-image">
+      <img src={heroImage} alt={heroImageAlt || title} loading="eager" />
+    </figure>
+  )}
 
   <div class="shell">
     <ReactionRail />

@@ -38,9 +38,10 @@ export interface UnifiedPost {
     category: string;
     tldr?: string;
     keywords: string[];
-    heroImage?: string;
+    heroImage?: string;         // CDN URL, ready to drop into <img src=...>
+    heroImageAlt?: string;
   };
-  bodyHtml: string;               // pre-rendered HTML (from portable text)
+  bodyHtml: string;
   headings: { depth: number; slug: string; text: string }[];
   source: "sanity" | "mdx";
 }
@@ -113,6 +114,8 @@ const POST_PROJECTION = /* groq */ `{
   category,
   tags,
   keywords,
+  "heroImageRef": heroImage.asset._ref,
+  "heroImageAlt": heroImage.alt,
   body
 }`;
 
@@ -148,9 +151,22 @@ function mapPost(raw: any): UnifiedPost {
       category: raw.category || "Engineering",
       tldr: raw.tldr,
       keywords: raw.keywords || [],
+      heroImage: raw.heroImageRef ? sanityImageUrl(raw.heroImageRef) : undefined,
+      heroImageAlt: raw.heroImageAlt,
     },
     bodyHtml,
     headings: extractHeadings(raw.body || []),
     source: "sanity",
   };
+}
+
+/**
+ * Turn a Sanity image asset _ref into a CDN URL.
+ *   "image-a6d87ae9…-2806x1424-png" → "https://cdn.sanity.io/images/{proj}/{ds}/a6d87ae9…-2806x1424.png"
+ */
+export function sanityImageUrl(assetRef: string, width?: number): string {
+  if (!projectId || !assetRef) return "";
+  const [, id, dims, ext] = assetRef.split("-");
+  const base = `https://cdn.sanity.io/images/${projectId}/${dataset}/${id}-${dims}.${ext}`;
+  return width ? `${base}?w=${width}&auto=format&q=80` : `${base}?auto=format&q=80`;
 }

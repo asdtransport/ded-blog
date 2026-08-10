@@ -51,6 +51,11 @@ const projects = [
           <a href="/blog" class="section-more">All posts →</a>
         </div>
         <a href={`/blog/${featured.slug}`} class="featured-card">
+          {featured.data.heroImage && (
+            <div class="featured-image">
+              <img src={featured.data.heroImage} alt={featured.data.heroImageAlt || featured.data.title} loading="eager" />
+            </div>
+          )}
           <div class="featured-body">
             <div class="featured-meta">
               <time>{fmtLong(featured.data.pubDate)}</time>
@@ -203,7 +208,8 @@ const projects = [
   }
 
   .featured-card {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -211,6 +217,30 @@ const projects = [
     color: var(--text);
     transition: all .2s ease;
     position: relative; overflow: hidden;
+    gap: 32px;
+  }
+  .featured-card:has(.featured-image) {
+    grid-template-columns: 1.1fr 1fr;
+    padding: 0;
+    align-items: stretch;
+  }
+  .featured-card:has(.featured-image) .featured-body {
+    padding: 40px 40px 40px 32px;
+  }
+  .featured-card:has(.featured-image)::before {
+    display: none;
+  }
+  .featured-image {
+    overflow: hidden;
+    background: var(--bg-tint);
+    border-radius: 12px 0 0 12px;
+  }
+  .featured-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-height: 320px;
   }
   .featured-card::before {
     content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
@@ -277,6 +307,15 @@ const projects = [
     .home-hero .lede { font-size: 17px; }
     .section-head h2 { font-size: 26px; }
     .featured-card { padding: 24px; }
+    .featured-card:has(.featured-image) {
+      grid-template-columns: 1fr;
+      padding: 0;
+    }
+    .featured-card:has(.featured-image) .featured-body {
+      padding: 24px;
+    }
+    .featured-image { border-radius: 12px 12px 0 0; }
+    .featured-image img { min-height: 200px; max-height: 260px; }
     .featured-card h3 { font-size: 26px; }
     .project-strip { grid-template-columns: 1fr; }
   }
