@@ -4,7 +4,6 @@ import ReactionRail from "../components/ReactionRail.astro";
 import TableOfContents from "../components/TableOfContents.astro";
 import ReadNext from "../components/ReadNext.astro";
 import ShareRow from "../components/ShareRow.astro";
-import Newsletter from "../components/Newsletter.astro";
 import { getAllPosts } from "../lib/content";
 
 interface PostData {
@@ -121,6 +120,4 @@ const url = new URL(Astro.url.pathname, Astro.site!).toString();
       </div>
     </section>
   </div>
-
-  <Newsletter />
 </BaseLayout>

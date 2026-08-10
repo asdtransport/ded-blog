@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Newsletter from "../components/Newsletter.astro";
 import { getAllCourses } from "../lib/content";
 
 const courses = await getAllCourses();
@@ -120,8 +119,6 @@ const formatLabel: Record<string, string> = {
       </div>
     </div>
   </section>
-
-  <div id="newsletter"><Newsletter /></div>
 </BaseLayout>
 
 <style>

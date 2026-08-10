@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Newsletter from "../components/Newsletter.astro";
 import { getAllProducts } from "../lib/content";
 
 const products = await getAllProducts();
@@ -116,8 +115,6 @@ const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {
       </p>
     </div>
   </section>
-
-  <div id="newsletter"><Newsletter /></div>
 </BaseLayout>
 
 <style>

@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Newsletter from "../components/Newsletter.astro";
 import { getAllPosts } from "../lib/content";
 
 const posts = await getAllPosts();
@@ -128,8 +127,6 @@ const projects = [
       </p>
     </div>
   </section>
-
-  <Newsletter />
 </BaseLayout>
 
 <style>
