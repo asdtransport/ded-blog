@@ -1,0 +1,165 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAllPosts } from "../lib/content";
+
+const posts = await getAllPosts();
+
+// Aggregate categories and tags
+const byCategory = posts.reduce<Record<string, number>>((acc, p) => {
+  const c = p.data.category || "Uncategorized";
+  acc[c] = (acc[c] || 0) + 1;
+  return acc;
+}, {});
+const categories = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+
+const byTag = posts.reduce<Record<string, number>>((acc, p) => {
+  for (const t of p.data.tags || []) acc[t] = (acc[t] || 0) + 1;
+  return acc;
+}, {});
+const tags = Object.entries(byTag).sort((a, b) => b[1] - a[1]);
+
+// Category descriptions (edit as new categories emerge)
+const catDescriptions: Record<string, string> = {
+  "AI Agents":   "Autonomous agent systems, orchestration, safety rails, and the LTG OS arc.",
+  "Engineering": "Practices and patterns from building on Bun · Hono · Astro · Cloudflare.",
+  "Cloudflare":  "Workers, Durable Objects, D1, R2, Queues, Pages, Zero Trust.",
+  "MSP":         "MSP engineering — M365, Entra, ConnectWise, security posture, reconciliation.",
+  "Meta":        "Notes on the workshop itself — how this site is built, publishing, tooling.",
+  "Philosophy":  "Sartre, Kierkegaard, Nietzsche, mystical traditions. Occasional detours.",
+};
+---
+<BaseLayout
+  title="Topics"
+  description="Browse posts by category and tag."
+  keywords={["topics", "categories", "tags"]}
+>
+  <section class="topics-hero">
+    <div class="topics-hero-inner">
+      <div class="topics-hero-eyebrow">Topics</div>
+      <h1>Browse by category.</h1>
+      <p class="lede">Every post is filed under one category and tagged for finer-grained search.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-inner">
+      <h2 class="section-title">Categories</h2>
+      <div class="cat-grid">
+        {categories.map(([name, count]) => (
+          <a href={`/blog?category=${encodeURIComponent(name)}`} class="cat-card">
+            <div class="cat-count">{count}</div>
+            <div class="cat-name">{name}</div>
+            <div class="cat-desc">{catDescriptions[name] || "Posts in this category."}</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {tags.length > 0 && (
+    <section class="section section-tint">
+      <div class="section-inner">
+        <h2 class="section-title">Tags</h2>
+        <p class="tags-lede">Finer-grained than categories — every post has a few.</p>
+        <div class="tag-cloud">
+          {tags.map(([name, count]) => (
+            <a href={`/blog?tag=${encodeURIComponent(name)}`} class="tag-chip">
+              {name} <span class="tag-count">{count}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .topics-hero {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 56px 24px 64px;
+  }
+  .topics-hero-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .topics-hero-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 6px;
+  }
+  .topics-hero h1 {
+    font-family: var(--font-serif);
+    font-size: 48px; font-weight: 700;
+    letter-spacing: -0.02em; margin: 0 0 16px;
+  }
+  .topics-hero .lede {
+    color: var(--text-muted); font-size: 17px; max-width: 640px; margin: 0;
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 28px; font-weight: 700; margin: 0 0 20px;
+    letter-spacing: -0.01em;
+  }
+  .tags-lede { color: var(--text-muted); margin: 0 0 20px; font-size: 15px; }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .cat-card {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    color: var(--text);
+    transition: all .15s ease;
+    position: relative;
+  }
+  .cat-card:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+  }
+  .cat-count {
+    position: absolute; top: 20px; right: 20px;
+    font-family: var(--font-serif);
+    font-size: 22px; font-weight: 700; color: var(--brand);
+    line-height: 1;
+  }
+  .cat-name {
+    font-family: var(--font-serif);
+    font-size: 20px; font-weight: 700;
+    margin: 0 0 8px; padding-right: 40px;
+  }
+  .cat-desc {
+    color: var(--text-muted); font-size: 13.5px; line-height: 1.5;
+  }
+
+  .tag-cloud {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .tag-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--text);
+    transition: all .12s ease;
+  }
+  .tag-chip:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    text-decoration: none;
+  }
+  .tag-count {
+    background: var(--bg-tint);
+    color: var(--text-muted);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

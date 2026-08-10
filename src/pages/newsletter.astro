@@ -1,0 +1,142 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout
+  title="Newsletter"
+  description="Occasional notes on AI agents, edge infrastructure, and the WorkIQ stack. No spam."
+  keywords={["newsletter", "email list"]}
+>
+  <section class="nl-hero">
+    <div class="nl-hero-inner">
+      <div class="nl-eyebrow">Newsletter</div>
+      <h1>Notes from the workshop, delivered.</h1>
+      <p class="lede">
+        Roughly once every couple of weeks, when there's something worth saying. No streak
+        counting, no daily cadence, no growth-hack subject lines. When you get a message
+        from me, you'll want to read it.
+      </p>
+
+      <form action="/api/subscribe" method="post" class="nl-form" onsubmit="event.preventDefault(); alert('Wire this to your subscriber endpoint.');">
+        <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+        <button type="submit">Subscribe</button>
+      </form>
+      <p class="nl-fine">Free forever. Unsubscribe with one click. No spam, no reselling.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-inner nl-body">
+      <div class="nl-col">
+        <h2>What you'll get</h2>
+        <ul>
+          <li>The one or two things I'm actively building this cycle, with links to the code</li>
+          <li>Deep-cut posts before they go public on the blog</li>
+          <li>Cohort dates for <a href="/courses">courses</a> — subscribers get first access</li>
+          <li>New <a href="/products">books, playbooks, and templates</a> as they land</li>
+        </ul>
+      </div>
+
+      <div class="nl-col">
+        <h2>What you won't get</h2>
+        <ul>
+          <li>Daily emails</li>
+          <li>Recycled tweet threads</li>
+          <li>Affiliate spam</li>
+          <li>"Have you thought about upgrading to my $997 mastermind"</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tint">
+    <div class="section-inner section-narrow">
+      <h2>Prefer RSS?</h2>
+      <p>
+        Perfectly reasonable. The <a href="/rss.xml">feed lives here</a> and every post lands
+        there the moment it publishes. Point <a href="https://feedly.com">Feedly</a>,
+        <a href="https://newsblur.com">NewsBlur</a>, or your reader of choice at it.
+      </p>
+      <p>
+        Or for AI readers: <a href="/llms.txt">llms.txt</a> is the site index in
+        <a href="https://llmstxt.org">the llmstxt.org format</a>, and <a href="/llms-full.txt">llms-full.txt</a>
+        is every post's full text in one file.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nl-hero {
+    background:
+      radial-gradient(1000px 500px at 30% 0%, rgba(15,118,110,0.09), transparent 55%),
+      var(--bg);
+    padding: 72px 24px 64px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nl-hero-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+  .nl-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 8px;
+  }
+  .nl-hero h1 {
+    font-family: var(--font-serif);
+    font-size: 52px; line-height: 1.05;
+    font-weight: 700; letter-spacing: -0.02em; margin: 0 0 20px;
+  }
+  .nl-hero .lede {
+    color: var(--text-muted); font-size: 18px; line-height: 1.55;
+    max-width: 620px; margin: 0 auto 32px;
+  }
+  .nl-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px; max-width: 480px; margin: 0 auto 8px;
+  }
+  .nl-form input {
+    padding: 12px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 15px; font-family: inherit;
+    background: #fff;
+  }
+  .nl-form button {
+    background: var(--brand); color: #fff;
+    padding: 12px 24px; border: none; border-radius: 8px;
+    font-weight: 600; cursor: pointer; font-size: 15px;
+    font-family: inherit;
+  }
+  .nl-form button:hover { background: var(--brand-hover); }
+  .nl-fine { color: var(--text-subtle); font-size: 13px; margin-top: 12px; }
+
+  .nl-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 48px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .nl-col h2 {
+    font-family: var(--font-serif);
+    font-size: 22px; margin: 0 0 12px;
+  }
+  .nl-col ul {
+    margin: 0; padding-left: 20px;
+    color: var(--text);
+    font-size: 15px; line-height: 1.6;
+  }
+  .nl-col li { margin: 6px 0; }
+
+  .section-tint { background: var(--bg-tint); }
+  .section-narrow { max-width: 720px; }
+  .section-tint h2 {
+    font-family: var(--font-serif);
+    font-size: 24px; margin: 0 0 12px;
+  }
+  .section-tint p { color: var(--text); font-size: 15px; line-height: 1.6; margin: 8px 0; }
+
+  @media (max-width: 720px) {
+    .nl-hero { padding: 48px 20px 56px; }
+    .nl-hero h1 { font-size: 34px; }
+    .nl-body { grid-template-columns: 1fr; gap: 32px; }
+  }
+</style>

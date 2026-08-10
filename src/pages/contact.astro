@@ -1,0 +1,118 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout
+  title="Contact"
+  description="Reach Derek Ethan Davis — consulting inquiries, course invoices, speaking, or just to say hi."
+  keywords={["contact", "consulting", "speaking"]}
+>
+  <section class="section">
+    <div class="contact-inner">
+      <div class="contact-eyebrow">Contact</div>
+      <h1>Say hi.</h1>
+      <p class="lede">
+        The fastest way to reach me is email. I read everything, reply to most, and try to
+        turn around consulting inquiries and invoice requests within a business day.
+      </p>
+
+      <div class="contact-grid">
+        <a href="mailto:derek@lockstep.tech" class="contact-card">
+          <div class="contact-label">Email</div>
+          <div class="contact-value">derek@lockstep.tech</div>
+          <div class="contact-sub">Consulting, invoicing, general.</div>
+        </a>
+        <a href="https://github.com/asdtransport" class="contact-card" target="_blank" rel="noopener">
+          <div class="contact-label">GitHub</div>
+          <div class="contact-value">@asdtransport</div>
+          <div class="contact-sub">Code, issues, sponsorship.</div>
+        </a>
+        <a href="https://twitter.com/derekethandavis" class="contact-card" target="_blank" rel="noopener">
+          <div class="contact-label">Twitter / X</div>
+          <div class="contact-value">@derekethandavis</div>
+          <div class="contact-sub">Public conversation. DMs open.</div>
+        </a>
+        <a href="https://linkedin.com" class="contact-card" target="_blank" rel="noopener">
+          <div class="contact-label">LinkedIn</div>
+          <div class="contact-value">Derek Ethan Davis</div>
+          <div class="contact-sub">Formal introductions, hiring.</div>
+        </a>
+      </div>
+
+      <div class="contact-topics">
+        <h2>What people usually reach out about</h2>
+        <ul>
+          <li><strong>Consulting.</strong> Cloudflare edge builds, agent-system architecture, MSP modernization. Retainers and fixed-scope engagements.</li>
+          <li><strong>Courses.</strong> Team pricing, purchase orders, private cohorts. Can invoice via LLC.</li>
+          <li><strong>Speaking.</strong> Small events, podcasts, and workshops on the topics I write about.</li>
+          <li><strong>Advising.</strong> A very small number of pre-Series-A companies. Ask.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-inner {
+    max-width: 820px; margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  .contact-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 8px;
+  }
+  .contact-inner h1 {
+    font-family: var(--font-serif);
+    font-size: 48px; letter-spacing: -0.02em; font-weight: 700;
+    margin: 0 0 16px;
+  }
+  .contact-inner .lede {
+    color: var(--text-muted); font-size: 17px; line-height: 1.6;
+    margin: 0 0 32px;
+  }
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .contact-card {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    color: var(--text);
+    transition: all .15s ease;
+  }
+  .contact-card:hover {
+    border-color: var(--brand);
+    transform: translateY(-2px);
+    text-decoration: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .contact-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 6px;
+  }
+  .contact-value {
+    font-family: var(--font-serif);
+    font-size: 18px; font-weight: 600; margin-bottom: 4px;
+    color: var(--brand);
+  }
+  .contact-sub { color: var(--text-muted); font-size: 13px; line-height: 1.4; }
+
+  .contact-topics h2 {
+    font-family: var(--font-serif);
+    font-size: 22px; margin: 0 0 12px;
+  }
+  .contact-topics ul {
+    margin: 0; padding-left: 20px;
+    font-size: 15px; line-height: 1.7;
+  }
+  .contact-topics strong { color: var(--text); }
+  .contact-topics li { color: var(--text-muted); margin: 8px 0; }
+
+  @media (max-width: 720px) {
+    .contact-inner h1 { font-size: 34px; }
+  }
+</style>

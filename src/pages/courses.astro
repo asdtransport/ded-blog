@@ -1,0 +1,293 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Newsletter from "../components/Newsletter.astro";
+import { courses, type CourseStatus } from "../lib/courses";
+
+const statusLabel: Record<CourseStatus, string> = {
+  "available":    "Enroll now",
+  "cohort-open":  "Cohort open",
+  "waitlist":     "Waitlist",
+  "coming-soon":  "Coming soon",
+};
+
+const formatLabel: Record<string, string> = {
+  "self-paced": "Self-paced",
+  "cohort":     "Cohort",
+  "workshop":   "Workshop",
+};
+---
+<BaseLayout
+  title="Courses"
+  description="Hands-on courses on shipping edge-native SaaS, building agent systems in production, and modernizing MSP operations."
+  keywords={["courses", "cohort", "workshop", "Cloudflare", "AI agents", "MSP"]}
+>
+  <section class="courses-hero">
+    <div class="courses-hero-inner">
+      <div class="courses-hero-eyebrow">Courses</div>
+      <h1>Learn to ship the way I ship.</h1>
+      <p class="lede">
+        The stack, the patterns, and the guardrails I use to run production systems.
+        Cohort courses when live discussion matters, self-paced tracks when it doesn't,
+        one-day workshops when you need it fast.
+      </p>
+      <div class="courses-hero-cta">
+        <a href="#catalog" class="btn btn-primary">See what's running →</a>
+        <a href="#faq" class="btn btn-ghost">Read the FAQ</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="catalog" class="section">
+    <div class="section-inner">
+      <div class="courses-list">
+        {courses.map(c => (
+          <article class={`course-card status-${c.status} format-${c.format}`}>
+            <div class="course-card-head">
+              <div class="course-badges">
+                <span class="course-format">{formatLabel[c.format]}</span>
+                <span class="course-status">{statusLabel[c.status]}</span>
+              </div>
+              <h3>{c.title}</h3>
+              <p class="course-tagline">{c.tagline}</p>
+            </div>
+
+            <div class="course-body">
+              <p class="course-desc">{c.description}</p>
+
+              <div class="course-outcomes">
+                <div class="outcomes-label">What you'll leave with</div>
+                <ul>
+                  {c.outcomes.map(o => <li>{o}</li>)}
+                </ul>
+              </div>
+
+              <div class="course-fine-print">
+                {c.duration && <div><strong>Duration:</strong> {c.duration}</div>}
+                {c.modules && <div><strong>Modules:</strong> {c.modules}</div>}
+                {c.hours && <div><strong>Est. time:</strong> {c.hours}h</div>}
+                {c.prereqs && <div><strong>Prereqs:</strong> {c.prereqs}</div>}
+                <div><strong>For:</strong> {c.audience}</div>
+              </div>
+            </div>
+
+            <div class="course-card-foot">
+              {c.price && <div class="course-price">{c.price}</div>}
+              <div class="course-cta">
+                {c.buyUrl && <a href={c.buyUrl} class="btn btn-primary">Enroll →</a>}
+                {!c.buyUrl && (c.status === "waitlist" || c.status === "coming-soon") && (
+                  <a href="#newsletter" class="btn btn-primary">Join the list →</a>
+                )}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section section-tint">
+    <div class="section-inner section-narrow">
+      <div class="section-head">
+        <h2>Common questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Who is this actually for?</summary>
+          <p>Engineers who ship things. Not "aspiring" anything. If you've deployed something to production before — even a hobby project — you'll get value. If you haven't, start with the free WorkIQ Starter Repo in <a href="/products">Products</a>.</p>
+        </details>
+        <details>
+          <summary>What does "cohort" mean here?</summary>
+          <p>Cohort courses run on a fixed schedule with a small group (typically 15-25 people). We meet live, there's a Discord, there's homework. Self-paced courses have the same material, no calendar.</p>
+        </details>
+        <details>
+          <summary>Do you offer refunds?</summary>
+          <p>Yes — full refund within the first two weeks of a cohort, no questions asked. For self-paced courses, within 30 days of purchase.</p>
+        </details>
+        <details>
+          <summary>Can my company pay for this?</summary>
+          <p>Yes. I can invoice via my LLC. Email <a href="/contact">contact</a> for a quote and terms — I usually get invoices out within a day.</p>
+        </details>
+        <details>
+          <summary>What if I'm on Windows / a Mac / Linux?</summary>
+          <p>The stack works on all three. I develop on Mac, teach against Linux/Windows equally. WSL2 works fine if you're on Windows.</p>
+        </details>
+        <details>
+          <summary>Is this AI-generated slop?</summary>
+          <p>No. I use AI heavily to draft, refactor, and explore — but every course is grounded in real production work I do at Lockstep and on my own projects. If a technique is in the course, I've shipped it.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <div id="newsletter"><Newsletter /></div>
+</BaseLayout>
+
+<style>
+  .courses-hero {
+    background:
+      radial-gradient(1000px 400px at 20% 0%, rgba(15,118,110,0.08), transparent 55%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 24px 72px;
+  }
+  .courses-hero-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .courses-hero-eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 8px;
+  }
+  .courses-hero h1 {
+    font-family: var(--font-serif); font-size: 56px; line-height: 1.05;
+    font-weight: 700; letter-spacing: -0.02em; margin: 0 0 20px;
+    max-width: 860px;
+  }
+  .courses-hero .lede {
+    font-size: 19px; line-height: 1.55; color: var(--text-muted);
+    max-width: 680px; margin: 0 0 24px;
+  }
+  .courses-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .courses-list {
+    display: flex; flex-direction: column; gap: 24px;
+  }
+
+  .course-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 32px;
+    transition: box-shadow .2s ease, border-color .2s ease;
+  }
+  .course-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+  .course-badges {
+    display: flex; gap: 6px; margin-bottom: 10px;
+  }
+  .course-format, .course-status {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 3px 8px; border-radius: 3px;
+  }
+  .course-format {
+    background: var(--bg-tint); color: var(--text-muted);
+  }
+  .course-status { background: var(--brand); color: #fff; }
+  .course-card.status-waitlist .course-status  { background: #d97706; }
+  .course-card.status-coming-soon .course-status { background: #6b7280; }
+
+  .course-card h3 {
+    font-family: var(--font-serif);
+    font-size: 28px; font-weight: 700; margin: 0 0 8px;
+    letter-spacing: -0.015em; line-height: 1.15;
+  }
+  .course-tagline {
+    color: var(--text-muted); font-size: 16px; margin: 0;
+    line-height: 1.5;
+  }
+  .course-body {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .course-desc {
+    color: var(--text-muted); font-size: 14px; line-height: 1.55; margin: 0;
+  }
+  .course-outcomes {
+    background: var(--bg-tint);
+    padding: 14px 16px; border-radius: 8px;
+  }
+  .outcomes-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .course-outcomes ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+  .course-outcomes li { margin: 4px 0; color: var(--text); line-height: 1.45; }
+  .course-fine-print {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .course-fine-print strong { color: var(--text); font-weight: 600; }
+
+  .course-card-head { grid-column: 1; }
+  .course-body     { grid-column: 1; }
+  .course-card-foot {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--bg-tint), #fff);
+    border-radius: 10px;
+    min-width: 220px;
+  }
+  .course-price {
+    font-family: var(--font-serif);
+    font-size: 40px; font-weight: 700; color: var(--text);
+    letter-spacing: -0.02em; line-height: 1;
+  }
+  .course-cta { width: 100%; }
+  .course-cta .btn { width: 100%; text-align: center; padding: 12px 20px; font-size: 14px; }
+
+  /* FAQ */
+  .section-tint { background: var(--bg-tint); }
+  .section-narrow { max-width: 720px; }
+  .faq {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .faq details {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0;
+    transition: border-color .15s ease;
+  }
+  .faq details[open] { border-color: var(--brand); }
+  .faq summary {
+    padding: 16px 20px;
+    font-weight: 600; font-size: 15px;
+    cursor: pointer;
+    list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .faq summary::after {
+    content: "+"; font-size: 20px; color: var(--text-muted);
+    transition: transform .15s ease;
+  }
+  .faq details[open] summary::after { content: "−"; }
+  .faq details p {
+    margin: 0; padding: 0 20px 16px;
+    color: var(--text-muted); font-size: 14.5px; line-height: 1.6;
+  }
+
+  .section-head { margin-bottom: 24px; }
+  .section-head h2 {
+    font-family: var(--font-serif);
+    font-size: 30px; font-weight: 700; margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  @media (max-width: 820px) {
+    .courses-hero { padding: 48px 20px 56px; }
+    .courses-hero h1 { font-size: 36px; }
+    .course-card {
+      grid-template-columns: 1fr;
+      padding: 24px;
+    }
+    .course-card-foot {
+      grid-column: 1; grid-row: auto;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .course-price { font-size: 32px; }
+    .course-cta { width: auto; }
+  }
+</style>

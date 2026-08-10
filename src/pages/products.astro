@@ -1,0 +1,245 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Newsletter from "../components/Newsletter.astro";
+import { products, type ProductStatus } from "../lib/products";
+
+const statusLabel: Record<ProductStatus, string> = {
+  available:  "Available",
+  preorder:   "Pre-order",
+  waitlist:   "Waitlist",
+  draft:      "In draft",
+};
+
+const kindLabel: Record<string, string> = {
+  book:      "Book",
+  guide:     "Guide",
+  template:  "Template",
+  playbook:  "Playbook",
+  toolkit:   "Toolkit",
+};
+
+const grouped = products.reduce<Record<string, typeof products>>((acc, p) => {
+  const k = kindLabel[p.kind] || p.kind;
+  (acc[k] ??= []).push(p);
+  return acc;
+}, {});
+---
+<BaseLayout
+  title="Products"
+  description="Books, playbooks, guides, and templates for shipping edge-native software, agent systems, and modern MSP operations."
+  keywords={["books", "playbooks", "WorkIQ", "Cloudflare", "AI agents", "MSP"]}
+>
+  <section class="products-hero">
+    <div class="products-hero-inner">
+      <div class="products-hero-eyebrow">Products</div>
+      <h1>Ship faster. Sell smarter. Break less.</h1>
+      <p class="lede">
+        The playbooks, books, and templates I use to run production systems at Lockstep and to
+        ship the WorkIQ family of edge apps. Some are free to read online. Some are paid because
+        they took a long time to compile and are worth what they cost.
+      </p>
+      <div class="products-hero-cta">
+        <a href="#catalog" class="btn btn-primary">Browse the catalog →</a>
+        <a href="#newsletter" class="btn btn-ghost">Get updates</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="catalog" class="section">
+    <div class="section-inner">
+      {Object.entries(grouped).map(([kind, items]) => (
+        <div class="products-group">
+          <div class="section-head">
+            <h2>{kind}s</h2>
+            <span class="products-count">{items.length}</span>
+          </div>
+          <div class="products-grid">
+            {items.map(p => (
+              <article class={`product-card status-${p.status}`}>
+                <div class="product-status">{statusLabel[p.status]}</div>
+                <h3>{p.name}</h3>
+                <p class="product-tagline">{p.tagline}</p>
+                <p class="product-desc">{p.description}</p>
+
+                <div class="product-meta">
+                  {p.chapters && <span>{p.chapters} chapters</span>}
+                  {p.pages && <span>{p.pages} pages</span>}
+                </div>
+
+                <div class="product-topics">
+                  {p.topics.map(t => <span class="tag">{t}</span>)}
+                </div>
+
+                <div class="product-audience">
+                  <strong>Who it's for:</strong> {p.audience}
+                </div>
+
+                <div class="product-actions">
+                  {p.readUrl && (
+                    <a href={p.readUrl} class="btn btn-ghost" target={p.readUrl.startsWith("http") ? "_blank" : undefined}>
+                      Read online
+                    </a>
+                  )}
+                  {p.buyUrl && p.price && (
+                    <a href={p.buyUrl} class="btn btn-primary">
+                      Buy {p.price}
+                    </a>
+                  )}
+                  {!p.buyUrl && p.status === "waitlist" && (
+                    <a href="#newsletter" class="btn btn-primary">Join waitlist</a>
+                  )}
+                  {!p.buyUrl && p.status === "preorder" && p.price && (
+                    <a href="#newsletter" class="btn btn-primary">Pre-order {p.price}</a>
+                  )}
+                  {!p.buyUrl && p.status === "draft" && (
+                    <span class="btn btn-ghost" style="opacity:.6;cursor:default;">In draft</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section section-dark">
+    <div class="section-inner section-narrow">
+      <h2>Why free-to-read + paid PDF?</h2>
+      <p class="section-lede">
+        Because the writing exists to be read. If a chapter helps you at 2am and you don't
+        have $29 lying around, that's still a win for me — you'll remember it. The paid PDF
+        is for the people who want a portable copy, want to support the work, or want a
+        signal that the whole thing has been proofed for print.
+      </p>
+    </div>
+  </section>
+
+  <div id="newsletter"><Newsletter /></div>
+</BaseLayout>
+
+<style>
+  .products-hero {
+    background:
+      radial-gradient(1200px 500px at 15% 0%, rgba(15,118,110,0.10), transparent 55%),
+      radial-gradient(900px 400px at 85% 20%, rgba(8,145,178,0.08), transparent 60%),
+      var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 24px 72px;
+  }
+  .products-hero-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .products-hero-eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 8px;
+  }
+  .products-hero h1 {
+    font-family: var(--font-serif); font-size: 56px; line-height: 1.05;
+    font-weight: 700; letter-spacing: -0.02em; margin: 0 0 20px;
+    max-width: 860px;
+  }
+  .products-hero .lede {
+    font-size: 19px; line-height: 1.55; color: var(--text-muted);
+    max-width: 680px; margin: 0 0 24px;
+  }
+  .products-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .products-group + .products-group { margin-top: 56px; }
+  .products-count {
+    color: var(--text-muted); font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+  }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+  }
+  .product-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+  }
+  .product-status {
+    position: absolute; top: 20px; right: 20px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 3px 8px; border-radius: 3px;
+    background: var(--bg-tint); color: var(--text-muted);
+  }
+  .product-card.status-available .product-status { background: var(--brand); color: #fff; }
+  .product-card.status-preorder .product-status  { background: #7c3aed; color: #fff; }
+  .product-card.status-waitlist .product-status  { background: #d97706; color: #fff; }
+
+  .product-card h3 {
+    font-family: var(--font-serif);
+    font-size: 24px; font-weight: 700; margin: 0;
+    padding-right: 100px; /* room for status pill */
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  .product-tagline {
+    color: var(--text); font-size: 15px; font-weight: 500; margin: 0;
+    line-height: 1.4;
+  }
+  .product-desc {
+    color: var(--text-muted); font-size: 14px; line-height: 1.55; margin: 0;
+  }
+  .product-meta {
+    display: flex; gap: 12px; color: var(--text-subtle); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .product-meta span:not(:last-child)::after {
+    content: "·"; margin-left: 12px; color: var(--text-subtle);
+  }
+  .product-topics { display: flex; flex-wrap: wrap; gap: 4px; }
+  .product-audience {
+    font-size: 13px; color: var(--text-muted);
+    background: var(--bg-tint);
+    padding: 10px 12px; border-radius: 6px;
+    line-height: 1.4;
+  }
+  .product-audience strong { color: var(--text); font-weight: 600; }
+  .product-actions {
+    display: flex; gap: 8px; margin-top: auto; padding-top: 6px;
+  }
+  .product-actions .btn { flex: 1; text-align: center; padding: 8px 14px; font-size: 13px; }
+
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .section-head h2 {
+    font-family: var(--font-serif);
+    font-size: 30px; font-weight: 700; margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .section-dark {
+    background: #171717; color: #f5f5f5; padding: 56px 24px;
+  }
+  .section-dark h2 {
+    color: #fff; font-family: var(--font-serif);
+    font-size: 30px; margin: 0 0 12px;
+  }
+  .section-dark .section-lede {
+    color: #d4d4d0; font-size: 17px; line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    .products-hero { padding: 48px 20px 56px; }
+    .products-hero h1 { font-size: 36px; }
+    .product-card h3 { padding-right: 0; padding-top: 20px; }
+    .product-status { top: 12px; right: 12px; }
+  }
+</style>

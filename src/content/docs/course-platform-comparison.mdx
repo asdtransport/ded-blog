@@ -1,0 +1,103 @@
+---
+title: "Picking a course + product platform"
+description: "The seven realistic options for selling courses, books, and templates from this site — with tradeoffs, take rates, and my picks."
+group: "Reference"
+order: 60
+---
+
+The `/courses` and `/products` pages currently link to `#newsletter` for anything that isn't shipped yet. When you're ready to sell for real, pick a platform, drop the checkout URL into `src/lib/courses.ts` or `src/lib/products.ts`, push. That's the whole change.
+
+Here's the shortlist, ranked by what makes sense for a technical audience selling to other technical people.
+
+## 1. Lemon Squeezy — recommended for digital products
+
+**For:** books, playbooks, templates, one-off downloadable products.
+
+**Why:** Handles global tax (VAT, GST, US sales tax) as a Merchant of Record — you don't. Clean checkout, license keys, refund handling, affiliate program. Playbook-style dashboards that make sense.
+
+**Take:** 5% + $0.50 per transaction.
+
+**Setup effort:** ~30 minutes. Add product → get checkout URL → paste into `products.ts`.
+
+**Tradeoffs:** Slightly higher take than Stripe direct, but MoR means you never touch tax paperwork.
+
+## 2. Gumroad — the classic
+
+**For:** same as Lemon Squeezy, longer track record, simpler UI.
+
+**Take:** 10% flat (all-in, includes payment processing).
+
+**Setup effort:** 10 minutes.
+
+**Tradeoffs:** Take is higher, UI hasn't evolved much. Still fine for a first product to validate demand.
+
+## 3. Podia — recommended for courses, single-tier
+
+**For:** cohort or self-paced courses, hosted video, drip content, community + course in one.
+
+**Why:** Purpose-built for course creators. Handles video hosting, quizzes, discussion, email — all in one bill. Clean student experience without you building it.
+
+**Take:** ~5-8% depending on plan; monthly subscription ($33-$89/mo) instead of high per-sale take.
+
+**Setup effort:** A few hours to build the first course page + video setup.
+
+**Tradeoffs:** Students go to `podia.com/yourcourse` — you can point a subdomain but the experience is theirs, not yours.
+
+## 4. Circle — recommended for community-heavy courses
+
+**For:** cohort courses where community is a first-class feature.
+
+**Why:** Best-in-class community product with course/paywall bolted on. If the value prop is "learn with a group," Circle wins.
+
+**Take:** Subscription-based, ~$89-$399/mo. No per-transaction fee once you're on a plan.
+
+**Setup effort:** Half a day.
+
+**Tradeoffs:** Costs more up front. Overkill if you're not doing community.
+
+## 5. Kajabi — the "everything platform"
+
+**For:** if you want CRM, email, funnels, courses, community, and a store from one vendor.
+
+**Why:** Full-stack creator platform. Handles everything.
+
+**Take:** ~$149-$399/mo, no per-transaction.
+
+**Tradeoffs:** Expensive, opinionated, less friendly to technical audiences. Best for creators who don't want to touch code.
+
+## 6. Stripe direct + custom checkout
+
+**For:** total ownership of the checkout experience.
+
+**Why:** Lowest take (2.9% + $0.30), full control over UX, integrates with anything.
+
+**Take:** 2.9% + $0.30 per transaction. You handle tax (or use Stripe Tax at +0.5%).
+
+**Setup effort:** A day or two to wire checkout, license issuance, refund handling.
+
+**Tradeoffs:** You own everything — including compliance. For an engineer, arguably the best long-term play. For someone who wants to focus on the content, use Lemon Squeezy.
+
+## 7. Roll your own on WorkIQ
+
+**For:** later, once you have a few products shipping and want the whole stack owned.
+
+**Why:** You already have the WorkIQ scaffolder, Cloudflare edge, Sanity CMS, and now a public site. Adding a `product` schema + Stripe checkout + license issuance is a WorkIQ app you could ship in a week.
+
+**Take:** Just Stripe's take (2.9% + $0.30).
+
+**Tradeoffs:** Full ownership means full responsibility. Only worth it after $50K+ ARR in products/courses.
+
+## My recommendation for your v1
+
+**Books/playbooks/templates:** Lemon Squeezy. Fastest to production, tax handled for you.
+
+**Courses:** Podia for the first cohort. If the community piece matters (it usually does for cohort courses), Circle. Both let you validate before over-investing in tooling.
+
+**Consulting bookings:** [Cal.com](https://cal.com). Free tier is fine, integrates with Stripe if you're pre-charging for calls.
+
+**Migration path:** every product and course on this site is defined in `src/lib/products.ts` and `src/lib/courses.ts`. Ship on Lemon Squeezy / Podia now. When one hits $10K/month or more, migrate that specific product to a WorkIQ-hosted checkout. No re-architect required — you're changing a URL in a TypeScript file.
+
+<div class="callout tip">
+<div class="callout-title">Validation over infrastructure</div>
+<p>Your first sale matters way more than your checkout stack. Whatever's fastest to ship a real product beats whatever's most elegant. Ship, then optimize.</p>
+</div>
