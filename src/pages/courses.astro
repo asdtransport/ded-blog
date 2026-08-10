@@ -1,9 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Newsletter from "../components/Newsletter.astro";
-import { courses, type CourseStatus } from "../lib/courses";
+import { getAllCourses } from "../lib/content";
 
-const statusLabel: Record<CourseStatus, string> = {
+const courses = await getAllCourses();
+
+const statusLabel: Record<string, string> = {
   "available":    "Enroll now",
   "cohort-open":  "Cohort open",
   "waitlist":     "Waitlist",

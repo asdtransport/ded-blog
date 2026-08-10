@@ -1,9 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Newsletter from "../components/Newsletter.astro";
-import { products, type ProductStatus } from "../lib/products";
+import { getAllProducts } from "../lib/content";
 
-const statusLabel: Record<ProductStatus, string> = {
+const products = await getAllProducts();
+
+const statusLabel: Record<string, string> = {
   available:  "Available",
   preorder:   "Pre-order",
   waitlist:   "Waitlist",

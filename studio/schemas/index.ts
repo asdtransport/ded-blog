@@ -187,4 +187,225 @@ export const project = defineType({
   ],
 });
 
-export const schemaTypes = [post, page, author, project];
+// ─── PRODUCTS ──────────────────────────────────────────────
+export const product = defineType({
+  name: "product",
+  title: "Product",
+  type: "document",
+  fields: [
+    defineField({ name: "name", type: "string", validation: r => r.required() }),
+    defineField({
+      name: "slug", type: "slug",
+      options: { source: "name", maxLength: 96 },
+      validation: r => r.required(),
+    }),
+    defineField({
+      name: "kind", type: "string",
+      options: { list: ["book", "guide", "template", "playbook", "toolkit"] },
+      initialValue: "playbook",
+      validation: r => r.required(),
+    }),
+    defineField({
+      name: "status", type: "string",
+      options: { list: ["available", "preorder", "waitlist", "draft"] },
+      initialValue: "draft",
+    }),
+    defineField({ name: "tagline", type: "text", rows: 2, validation: r => r.required() }),
+    defineField({ name: "description", type: "text", rows: 4 }),
+    defineField({ name: "price", type: "string", description: "Display string, e.g. '$29' or 'Free'." }),
+    defineField({ name: "buyUrl", type: "url", description: "Checkout URL (Lemon Squeezy / Gumroad / etc.)." }),
+    defineField({ name: "readUrl", type: "url", description: "Free-to-read URL." }),
+    defineField({ name: "audience", type: "text", rows: 2, description: "Who this is for." }),
+    defineField({
+      name: "topics", type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+    }),
+    defineField({ name: "chapters", type: "number" }),
+    defineField({ name: "pages", type: "number" }),
+    defineField({ name: "cover", type: "image", options: { hotspot: true } }),
+    defineField({ name: "order", type: "number", initialValue: 100 }),
+    // For products that ARE a book — link them so the /products page and /books share
+    defineField({ name: "bookRef", type: "reference", to: [{ type: "book" }], description: "If this product is a book, link it here so we can share metadata." }),
+  ],
+  orderings: [
+    { title: "Order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] },
+  ],
+});
+
+// ─── COURSES ──────────────────────────────────────────────
+export const course = defineType({
+  name: "course",
+  title: "Course",
+  type: "document",
+  fields: [
+    defineField({ name: "title", type: "string", validation: r => r.required() }),
+    defineField({
+      name: "slug", type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: r => r.required(),
+    }),
+    defineField({
+      name: "status", type: "string",
+      options: { list: ["available", "cohort-open", "waitlist", "coming-soon"] },
+      initialValue: "coming-soon",
+    }),
+    defineField({
+      name: "format", type: "string",
+      options: { list: ["self-paced", "cohort", "workshop"] },
+      initialValue: "self-paced",
+    }),
+    defineField({ name: "tagline", type: "text", rows: 2, validation: r => r.required() }),
+    defineField({ name: "description", type: "text", rows: 5 }),
+    defineField({ name: "duration", type: "string" }),
+    defineField({ name: "price", type: "string" }),
+    defineField({ name: "buyUrl", type: "url" }),
+    defineField({ name: "waitlistUrl", type: "url" }),
+    defineField({
+      name: "outcomes", type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      description: "3-5 concrete outcomes.",
+    }),
+    defineField({ name: "modules", type: "number" }),
+    defineField({ name: "hours", type: "number" }),
+    defineField({ name: "prereqs", type: "text", rows: 2 }),
+    defineField({ name: "audience", type: "text", rows: 2 }),
+    defineField({ name: "cover", type: "image", options: { hotspot: true } }),
+    defineField({ name: "order", type: "number", initialValue: 100 }),
+  ],
+  orderings: [
+    { title: "Order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] },
+  ],
+});
+
+// ─── BOOKS ────────────────────────────────────────────────
+// A `book` is the shell (title, cover, subtitle, description, buy links).
+// Chapters live as separate `chapter` documents referencing the book,
+// so long-form content stays queryable and Studio can edit each chapter
+// independently. Reading order controlled by `order` on each chapter.
+export const book = defineType({
+  name: "book",
+  title: "Book",
+  type: "document",
+  fields: [
+    defineField({ name: "title", type: "string", validation: r => r.required() }),
+    defineField({ name: "subtitle", type: "string" }),
+    defineField({
+      name: "slug", type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: r => r.required(),
+    }),
+    defineField({ name: "description", type: "text", rows: 3, validation: r => r.required() }),
+    defineField({ name: "tagline", type: "string" }),
+    defineField({ name: "author", type: "reference", to: [{ type: "author" }] }),
+    defineField({
+      name: "status", type: "string",
+      options: { list: ["draft", "in-progress", "published", "archived"] },
+      initialValue: "in-progress",
+    }),
+    defineField({ name: "cover", type: "image", options: { hotspot: true } }),
+    defineField({ name: "buyPdfUrl", type: "url", description: "Optional paid PDF checkout URL." }),
+    defineField({ name: "priceDisplay", type: "string", description: "e.g. '$29'" }),
+    defineField({
+      name: "topics", type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+    }),
+    defineField({ name: "publishedDate", type: "datetime" }),
+    defineField({ name: "updatedDate", type: "datetime" }),
+    defineField({
+      name: "aboutBody", type: "array",
+      description: "Long-form book landing content — what's inside, who it's for, how to read.",
+      of: [
+        defineArrayMember({
+          type: "block",
+          styles: [
+            { title: "Normal", value: "normal" },
+            { title: "H2", value: "h2" },
+            { title: "H3", value: "h3" },
+            { title: "Quote", value: "blockquote" },
+          ],
+        }),
+      ],
+    }),
+    defineField({ name: "draft", type: "boolean", initialValue: false }),
+  ],
+  preview: {
+    select: { title: "title", subtitle: "subtitle", media: "cover" },
+  },
+});
+
+export const chapter = defineType({
+  name: "chapter",
+  title: "Chapter",
+  type: "document",
+  fields: [
+    defineField({ name: "title", type: "string", validation: r => r.required() }),
+    defineField({
+      name: "slug", type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: r => r.required(),
+    }),
+    defineField({
+      name: "book", type: "reference", to: [{ type: "book" }],
+      validation: r => r.required(),
+    }),
+    defineField({ name: "order", type: "number", initialValue: 100, description: "Reading order within the book." }),
+    defineField({ name: "part", type: "string", description: "Optional part / section grouping (e.g. 'Part I: Fundamentals')." }),
+    defineField({ name: "description", type: "text", rows: 2 }),
+    defineField({ name: "readMinutes", type: "number", description: "Estimated read time." }),
+    defineField({ name: "publishedDate", type: "datetime" }),
+    defineField({
+      name: "body", type: "array",
+      of: [
+        defineArrayMember({
+          type: "block",
+          styles: [
+            { title: "Normal", value: "normal" },
+            { title: "H2", value: "h2" },
+            { title: "H3", value: "h3" },
+            { title: "Quote", value: "blockquote" },
+          ],
+          marks: {
+            decorators: [
+              { title: "Strong", value: "strong" },
+              { title: "Emphasis", value: "em" },
+              { title: "Code", value: "code" },
+            ],
+            annotations: [
+              {
+                name: "link", type: "object", title: "External link",
+                fields: [
+                  { name: "href", type: "url", title: "URL" },
+                  { name: "blank", type: "boolean", title: "Open in new tab" },
+                ],
+              },
+            ],
+          },
+        }),
+        defineArrayMember({ type: "image", options: { hotspot: true } }),
+        defineArrayMember({
+          name: "codeBlock", type: "object", title: "Code Block",
+          fields: [
+            { name: "language", type: "string", title: "Language" },
+            { name: "code", type: "text", title: "Code" },
+            { name: "filename", type: "string", title: "Filename (optional)" },
+          ],
+        }),
+      ],
+    }),
+    defineField({ name: "draft", type: "boolean", initialValue: true }),
+  ],
+  preview: {
+    select: { title: "title", subtitle: "book.title", order: "order" },
+    prepare: ({ title, subtitle, order }) => ({
+      title: `${order != null ? `${order}. ` : ""}${title}`,
+      subtitle: subtitle ? `→ ${subtitle}` : "unassigned",
+    }),
+  },
+  orderings: [
+    { title: "Reading order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] },
+  ],
+});
+
+export const schemaTypes = [post, page, author, project, product, course, book, chapter];

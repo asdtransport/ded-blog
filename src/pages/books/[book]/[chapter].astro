@@ -1,0 +1,281 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import TableOfContents from "../../../components/TableOfContents.astro";
+import { getAllBooks, getBookBySlug, getChaptersForBook } from "../../../lib/content";
+
+export async function getStaticPaths() {
+  const books = await getAllBooks();
+  const paths: any[] = [];
+  for (const b of books) {
+    const chapters = await getChaptersForBook(b.slug);
+    for (const c of chapters) {
+      paths.push({ params: { book: b.slug, chapter: c.slug } });
+    }
+  }
+  return paths;
+}
+
+const { book: bookSlug, chapter: chapterSlug } = Astro.params;
+const book = await getBookBySlug(bookSlug!);
+if (!book) throw new Error(`Book not found: ${bookSlug}`);
+
+const chapters = await getChaptersForBook(bookSlug!);
+const idx = chapters.findIndex(c => c.slug === chapterSlug);
+if (idx === -1) throw new Error(`Chapter not found: ${chapterSlug}`);
+const chapter = chapters[idx];
+const prev = idx > 0 ? chapters[idx - 1] : null;
+const next = idx < chapters.length - 1 ? chapters[idx + 1] : null;
+
+// Group chapters for the sidebar (by part)
+const partGroups: { part: string; chapters: typeof chapters }[] = [];
+for (const c of chapters) {
+  const partName = c.part || "Chapters";
+  const g = partGroups.find(g => g.part === partName);
+  if (g) g.chapters.push(c);
+  else partGroups.push({ part: partName, chapters: [c] });
+}
+---
+<BaseLayout
+  title={`${chapter.title} — ${book.title}`}
+  description={chapter.description || book.description}
+>
+  <div class="reader-shell">
+    <aside class="reader-sidebar">
+      <div class="reader-sidebar-header">
+        <a href={`/books/${book.slug}`} class="reader-book-link">
+          <div class="reader-book-eyebrow">← Book</div>
+          <div class="reader-book-title">{book.title}</div>
+        </a>
+      </div>
+      <nav aria-label="Chapters">
+        {partGroups.map(g => (
+          <div class="reader-part">
+            <div class="reader-part-label">{g.part}</div>
+            <ol>
+              {g.chapters.map(c => {
+                const isActive = c.slug === chapter.slug;
+                return (
+                  <li>
+                    <a
+                      href={`/books/${book.slug}/${c.slug}`}
+                      class:list={["reader-chap-link", { active: isActive }]}
+                    >
+                      <span class="reader-chap-num">{c.order}</span>
+                      <span class="reader-chap-title">{c.title}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <main class="reader-main">
+      <article class="prose reader-prose">
+        {chapter.part && <div class="reader-part-label reader-part-top">{chapter.part}</div>}
+        <h1>{chapter.title}</h1>
+        {chapter.description && <p class="lede">{chapter.description}</p>}
+        <div class="reader-meta">
+          <span>Chapter {chapter.order}</span>
+          {chapter.readMinutes && <span>·</span>}
+          {chapter.readMinutes && <span>{chapter.readMinutes} min read</span>}
+        </div>
+        <hr />
+        <Fragment set:html={chapter.bodyHtml} />
+      </article>
+
+      <nav class="reader-prev-next" aria-label="Chapter navigation">
+        {prev ? (
+          <a href={`/books/${book.slug}/${prev.slug}`} class="reader-pn reader-pn-prev">
+            <span class="reader-pn-label">← Previous chapter</span>
+            <span class="reader-pn-title">{prev.title}</span>
+          </a>
+        ) : <span />}
+        {next ? (
+          <a href={`/books/${book.slug}/${next.slug}`} class="reader-pn reader-pn-next">
+            <span class="reader-pn-label">Next chapter →</span>
+            <span class="reader-pn-title">{next.title}</span>
+          </a>
+        ) : (
+          <a href={`/books/${book.slug}`} class="reader-pn reader-pn-next">
+            <span class="reader-pn-label">Back to book →</span>
+            <span class="reader-pn-title">{book.title}</span>
+          </a>
+        )}
+      </nav>
+    </main>
+
+    <aside class="reader-toc-column">
+      {chapter.headings.length > 0 && (
+        <div class="reader-toc-sticky">
+          <TableOfContents headings={chapter.headings} />
+        </div>
+      )}
+    </aside>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .reader-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 220px;
+    gap: 40px;
+    padding: 32px 24px 80px;
+    align-items: start;
+  }
+  .reader-sidebar {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    font-size: 13.5px;
+    border-right: 1px solid var(--border);
+    padding-right: 20px;
+  }
+  .reader-sidebar-header {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .reader-book-link { color: var(--text); display: block; }
+  .reader-book-link:hover { text-decoration: none; color: var(--brand); }
+  .reader-book-eyebrow { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .reader-book-title {
+    font-family: var(--font-serif); font-size: 17px; font-weight: 700;
+    line-height: 1.2; letter-spacing: -0.01em;
+  }
+  .reader-part { margin-bottom: 20px; }
+  .reader-part-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--text-subtle);
+    margin-bottom: 6px; padding: 0 2px;
+  }
+  .reader-part ol { list-style: none; padding: 0; margin: 0; }
+  .reader-part li { margin: 0; }
+  .reader-chap-link {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 6px;
+    padding: 6px 10px;
+    color: var(--text-muted);
+    border-radius: 4px;
+    margin: 1px 0;
+    align-items: baseline;
+  }
+  .reader-chap-link:hover {
+    background: var(--bg-tint); color: var(--text);
+    text-decoration: none;
+  }
+  .reader-chap-link.active {
+    background: rgba(15,118,110,0.08);
+    color: var(--brand);
+    font-weight: 600;
+  }
+  .reader-chap-num {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-subtle);
+    font-size: 12px;
+    text-align: right;
+  }
+  .reader-chap-link.active .reader-chap-num { color: var(--brand); }
+  .reader-chap-title {
+    font-size: 13.5px; line-height: 1.3;
+    min-width: 0;
+  }
+
+  .reader-main { min-width: 0; }
+  .reader-prose { max-width: 720px; }
+  .reader-part-top {
+    display: inline-block;
+    color: var(--brand);
+    margin-bottom: 8px;
+    padding: 0;
+  }
+  .reader-prose h1 {
+    font-family: var(--font-serif);
+    font-size: 44px; font-weight: 700;
+    letter-spacing: -0.02em; line-height: 1.1;
+    margin: 0 0 16px;
+  }
+  .reader-prose .lede {
+    font-size: 20px; color: var(--text-muted); line-height: 1.5;
+    margin: 0 0 12px; max-width: 640px;
+  }
+  .reader-meta {
+    display: flex; gap: 6px; align-items: center;
+    color: var(--text-subtle); font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .reader-prose hr {
+    margin: 20px 0 32px;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .reader-toc-column { align-self: start; }
+  .reader-toc-sticky { position: sticky; top: 88px; font-size: 13px; }
+  .reader-toc-sticky .toc h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-subtle); font-weight: 700;
+    margin: 0 0 8px; padding: 0;
+  }
+
+  .reader-prev-next {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    max-width: 720px;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .reader-pn {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    transition: all .15s ease;
+  }
+  .reader-pn:hover {
+    border-color: var(--brand);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+  .reader-pn-next { text-align: right; }
+  .reader-pn-label {
+    font-size: 12px; color: var(--text-muted); font-weight: 500;
+  }
+  .reader-pn-title {
+    font-family: var(--font-serif);
+    font-size: 15px; font-weight: 600; line-height: 1.3;
+  }
+
+  @media (max-width: 1100px) {
+    .reader-shell {
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 32px;
+    }
+    .reader-toc-column { display: none; }
+  }
+  @media (max-width: 780px) {
+    .reader-shell {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding: 20px 16px 60px;
+    }
+    .reader-sidebar {
+      position: static; border-right: none;
+      border-bottom: 1px solid var(--border);
+      padding-right: 0; padding-bottom: 16px;
+      max-height: none;
+    }
+    .reader-prose h1 { font-size: 32px; }
+    .reader-prev-next { grid-template-columns: 1fr; }
+  }
+</style>

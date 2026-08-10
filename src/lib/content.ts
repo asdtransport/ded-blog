@@ -106,3 +106,159 @@ function mapPage(raw: any): UnifiedPage {
     bodyHtml: raw.body ? toHTML(raw.body, { components: portableTextComponents }) : "",
   };
 }
+
+// ─── Products ────────────────────────────────
+export interface UnifiedProduct {
+  slug: string;
+  name: string;
+  kind: string;
+  status: string;
+  tagline: string;
+  description: string;
+  price?: string;
+  buyUrl?: string;
+  readUrl?: string;
+  audience?: string;
+  topics: string[];
+  chapters?: number;
+  pages?: number;
+  order: number;
+}
+
+export async function getAllProducts(): Promise<UnifiedProduct[]> {
+  if (!sanityEnabled || !sanity) return [];
+  const results = await sanity.fetch<any[]>(
+    `*[_type == "product" && !(_id in path("drafts.**"))] | order(order asc){
+      "slug": slug.current, name, kind, status, tagline, description,
+      price, buyUrl, readUrl, audience, topics, chapters, pages, order
+    }`
+  );
+  return results.map(r => ({ ...r, topics: r.topics || [], order: r.order ?? 100 }));
+}
+
+// ─── Courses ─────────────────────────────────
+export interface UnifiedCourse {
+  slug: string;
+  title: string;
+  status: string;
+  format: string;
+  tagline: string;
+  description: string;
+  duration?: string;
+  price?: string;
+  buyUrl?: string;
+  waitlistUrl?: string;
+  outcomes: string[];
+  modules?: number;
+  hours?: number;
+  prereqs?: string;
+  audience?: string;
+  order: number;
+}
+
+export async function getAllCourses(): Promise<UnifiedCourse[]> {
+  if (!sanityEnabled || !sanity) return [];
+  const results = await sanity.fetch<any[]>(
+    `*[_type == "course" && !(_id in path("drafts.**"))] | order(order asc){
+      "slug": slug.current, title, status, format, tagline, description,
+      duration, price, buyUrl, waitlistUrl, outcomes, modules, hours, prereqs, audience, order
+    }`
+  );
+  return results.map(r => ({ ...r, outcomes: r.outcomes || [], order: r.order ?? 100 }));
+}
+
+// ─── Books + Chapters ────────────────────────
+export interface UnifiedBook {
+  slug: string;
+  title: string;
+  subtitle?: string;
+  tagline?: string;
+  description: string;
+  author?: string;
+  status: string;
+  cover?: string;
+  buyPdfUrl?: string;
+  priceDisplay?: string;
+  topics: string[];
+  publishedDate?: Date;
+  updatedDate?: Date;
+  aboutHtml: string;
+}
+
+export interface UnifiedChapter {
+  slug: string;
+  bookSlug: string;
+  bookTitle: string;
+  title: string;
+  order: number;
+  part?: string;
+  description?: string;
+  readMinutes?: number;
+  bodyHtml: string;
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+import { sanityImageUrl, extractHeadingsExport as extractHeadings } from "./sanity";
+
+export async function getAllBooks(): Promise<UnifiedBook[]> {
+  if (!sanityEnabled || !sanity) return [];
+  const results = await sanity.fetch<any[]>(
+    `*[_type == "book" && !(_id in path("drafts.**")) && draft != true]{
+      "slug": slug.current, title, subtitle, tagline, description,
+      "author": author->name, status,
+      "coverRef": cover.asset._ref,
+      buyPdfUrl, priceDisplay, topics,
+      publishedDate, updatedDate, aboutBody
+    }`
+  );
+  return results.map(r => ({
+    slug: r.slug,
+    title: r.title,
+    subtitle: r.subtitle,
+    tagline: r.tagline,
+    description: r.description || "",
+    author: r.author,
+    status: r.status || "in-progress",
+    cover: r.coverRef ? sanityImageUrl(r.coverRef) : undefined,
+    buyPdfUrl: r.buyPdfUrl,
+    priceDisplay: r.priceDisplay,
+    topics: r.topics || [],
+    publishedDate: r.publishedDate ? new Date(r.publishedDate) : undefined,
+    updatedDate: r.updatedDate ? new Date(r.updatedDate) : undefined,
+    aboutHtml: r.aboutBody ? toHTML(r.aboutBody, { components: portableTextComponents }) : "",
+  }));
+}
+
+export async function getBookBySlug(slug: string): Promise<UnifiedBook | null> {
+  const all = await getAllBooks();
+  return all.find(b => b.slug === slug) || null;
+}
+
+export async function getChaptersForBook(bookSlug: string): Promise<UnifiedChapter[]> {
+  if (!sanityEnabled || !sanity) return [];
+  const results = await sanity.fetch<any[]>(
+    `*[_type == "chapter" && !(_id in path("drafts.**")) && draft != true && book->slug.current == $bookSlug] | order(order asc){
+      "slug": slug.current, title, order, part, description, readMinutes,
+      "bookSlug": book->slug.current, "bookTitle": book->title,
+      body
+    }`,
+    { bookSlug }
+  );
+  return results.map(r => ({
+    slug: r.slug,
+    bookSlug: r.bookSlug,
+    bookTitle: r.bookTitle,
+    title: r.title,
+    order: r.order ?? 100,
+    part: r.part,
+    description: r.description,
+    readMinutes: r.readMinutes,
+    bodyHtml: r.body ? toHTML(r.body, { components: portableTextComponents }) : "",
+    headings: extractHeadings(r.body || []),
+  }));
+}
+
+export async function getChapter(bookSlug: string, chapterSlug: string): Promise<UnifiedChapter | null> {
+  const chapters = await getChaptersForBook(bookSlug);
+  return chapters.find(c => c.slug === chapterSlug) || null;
+}

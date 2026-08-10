@@ -1,0 +1,183 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAllBooks, getChaptersForBook } from "../../lib/content";
+
+const books = await getAllBooks();
+
+// For each, get chapter count and total read minutes (parallelize)
+const enriched = await Promise.all(
+  books.map(async b => {
+    const chapters = await getChaptersForBook(b.slug);
+    const totalMinutes = chapters.reduce((sum, c) => sum + (c.readMinutes || 0), 0);
+    return { ...b, chapterCount: chapters.length, totalMinutes };
+  })
+);
+
+const statusLabel: Record<string, string> = {
+  "draft":       "Draft",
+  "in-progress": "In progress",
+  "published":   "Published",
+  "archived":    "Archived",
+};
+---
+<BaseLayout
+  title="Books"
+  description="Long-form books on the WorkIQ stack, agent systems, edge infrastructure, and MSP operations. Free to read online. Buy the PDF if you want a copy to keep."
+  keywords={["books", "WorkIQ", "AI Agents", "Cloudflare"]}
+>
+  <section class="books-hero">
+    <div class="books-hero-inner">
+      <div class="books-hero-eyebrow">Books</div>
+      <h1>Long-form, deeply-linked, free to read.</h1>
+      <p class="lede">
+        Full-length books written as I ship. Every chapter is standalone and cross-linked.
+        Read online for free — the whole point is that the writing exists to be read.
+        Buy a PDF if you want a portable copy or want to support the work.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-inner">
+      <div class="books-grid">
+        {enriched.map(b => (
+          <a href={`/books/${b.slug}`} class="book-card">
+            <div class="book-cover-wrap">
+              {b.cover ? (
+                <img src={b.cover} alt={b.title} loading="lazy" />
+              ) : (
+                <div class="book-cover-placeholder">
+                  <span>{b.title.split(" ").slice(0, 3).map(w => w[0]).join("")}</span>
+                </div>
+              )}
+            </div>
+            <div class="book-body">
+              <div class="book-status">{statusLabel[b.status]}</div>
+              <h3>{b.title}</h3>
+              {b.subtitle && <p class="book-subtitle">{b.subtitle}</p>}
+              <p class="book-desc">{b.description}</p>
+              <div class="book-stats">
+                <span>{b.chapterCount} chapters</span>
+                {b.totalMinutes > 0 && <span>~{b.totalMinutes} min read</span>}
+                {b.priceDisplay && <span>PDF {b.priceDisplay}</span>}
+              </div>
+              <div class="book-topics">
+                {b.topics.slice(0, 5).map(t => <span class="tag">{t}</span>)}
+              </div>
+              <span class="book-cta">Read online free →</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {enriched.length === 0 && (
+        <div class="empty">
+          <p>No books published yet. First one is in progress.</p>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .books-hero {
+    background:
+      radial-gradient(1000px 400px at 30% 0%, rgba(15,118,110,0.09), transparent 55%),
+      var(--bg);
+    padding: 64px 24px 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .books-hero-inner { max-width: var(--shell-max); margin: 0 auto; }
+  .books-hero-eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--brand); margin-bottom: 8px;
+  }
+  .books-hero h1 {
+    font-family: var(--font-serif);
+    font-size: 52px; line-height: 1.05;
+    font-weight: 700; letter-spacing: -0.02em; margin: 0 0 20px;
+    max-width: 900px;
+  }
+  .books-hero .lede {
+    font-size: 19px; line-height: 1.55; color: var(--text-muted);
+    max-width: 680px; margin: 0;
+  }
+
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 28px;
+  }
+  .book-card {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 24px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    color: var(--text);
+    transition: all .2s ease;
+  }
+  .book-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+  .book-cover-wrap {
+    background: linear-gradient(135deg, var(--brand), #0891b2);
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .book-cover-wrap img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .book-cover-placeholder {
+    color: #fff; font-family: var(--font-serif); font-size: 32px; font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .book-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .book-status {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .book-card h3 {
+    font-family: var(--font-serif);
+    font-size: 22px; font-weight: 700; margin: 0;
+    letter-spacing: -0.01em; line-height: 1.15;
+  }
+  .book-subtitle {
+    font-size: 14px; color: var(--text-muted); font-style: italic;
+    margin: 0; line-height: 1.4;
+  }
+  .book-desc {
+    font-size: 13.5px; color: var(--text-muted); margin: 0;
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .book-stats {
+    display: flex; gap: 12px; color: var(--text-subtle); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .book-stats span:not(:last-child)::after {
+    content: "·"; margin-left: 12px;
+  }
+  .book-topics { display: flex; flex-wrap: wrap; gap: 4px; }
+  .book-cta {
+    font-size: 13px; color: var(--brand); font-weight: 600;
+    margin-top: auto;
+  }
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+
+  @media (max-width: 720px) {
+    .books-hero { padding: 48px 20px; }
+    .books-hero h1 { font-size: 36px; }
+    .book-card { grid-template-columns: 100px 1fr; padding: 18px; gap: 16px; }
+  }
+</style>

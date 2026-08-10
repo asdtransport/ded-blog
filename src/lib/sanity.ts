@@ -100,6 +100,8 @@ function extractHeadings(blocks: any[]): { depth: number; slug: string; text: st
     });
 }
 
+export const extractHeadingsExport = extractHeadings;
+
 // ─── Queries ───────────────────────────────────────────────
 
 const POST_PROJECTION = /* groq */ `{
