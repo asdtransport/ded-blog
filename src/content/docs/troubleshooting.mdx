@@ -1,0 +1,102 @@
+---
+title: "Troubleshooting"
+description: "The things that broke while building this, and what to do when they break again."
+group: "Operations"
+order: 50
+---
+
+## Content published in Studio but not showing on the site
+
+**Symptom.** You clicked Publish in the Studio, waited a minute, refreshed the site, still no change.
+
+**Check first:**
+
+1. Did you click **Publish** (not just Save)? Sanity autosaves drafts continuously. Only Publish flips the document to public.
+2. Did a workflow run fire? Check [github.com/asdtransport/ded-blog/actions](https://github.com/asdtransport/ded-blog/actions). Should see one triggered by `repository_dispatch` within seconds of publish.
+3. Did the build succeed? Look for the green check.
+4. Is the browser showing a cached page? Cache-bust with `?v=<random>` at the end of the URL.
+
+**If no workflow fired:** the Sanity webhook may have been paused or deleted. Check at [sanity.io/manage → API → Webhooks](https://www.sanity.io/manage). Should see `GitHub CI redeploy` enabled.
+
+**If the webhook fired but the build failed:** click into the failed run in GitHub Actions. Common causes:
+- `SANITY_READ_TOKEN` was rotated but the GitHub secret wasn't updated
+- Schema changed in the Studio but not in the codebase, and a projection references a field that doesn't exist
+
+## Sanity build fetch returns empty
+
+**Symptom.** `bun run build` succeeds but posts don't appear on the site. Empty archive, empty home grid.
+
+**Cause.** `SANITY_READ_TOKEN` isn't in the environment. The dataset is public, but the API endpoint requires auth even for public reads (CDN reads don't). Without the token, `client.fetch()` returns `null` silently.
+
+**Fix.** Confirm `.env` has:
+
+```
+PUBLIC_SANITY_PROJECT_ID=3onlytdh
+PUBLIC_SANITY_DATASET=production
+SANITY_READ_TOKEN=sk...
+```
+
+Or in CI, confirm `SANITY_READ_TOKEN` is set as a repo secret and the workflow passes it into the build step.
+
+## Code block content rendering as prose
+
+**Symptom.** A code block in a post shows up as plain text without the `<pre>` styling.
+
+**Cause.** The portable text renderer isn't handling `codeBlock` type. Usually because `sanity.ts`'s `portableTextComponents` config lost its `types.codeBlock` entry, or the block in Sanity is a plain `block` type instead of `codeBlock`.
+
+**Fix.** In the Studio, edit the block, delete it, insert a fresh **Code Block** (not a paragraph with a code mark). Republish.
+
+## Hero image not showing on post
+
+**Symptom.** Uploaded a hero image in Sanity but the live post has no banner.
+
+**Cause.** Historically: the projection didn't include `heroImage`. Fixed as of the hero-image commit. If it recurs, check:
+
+1. `POST_PROJECTION` in `src/lib/sanity.ts` includes `"heroImageRef": heroImage.asset._ref`
+2. `mapPost` reads `raw.heroImageRef` and calls `sanityImageUrl()`
+3. `BlogPost.astro` layout renders `{heroImage && <figure class="post-hero-image">...</figure>}`
+
+## CLI publish fails with 401
+
+**Symptom.** `bun run publish` returns HTTP 401 Unauthorized.
+
+**Cause.** `SANITY_WRITE_TOKEN` is missing or has insufficient scope. The token needs **Editor** role on the project.
+
+**Fix.**
+
+1. Go to [sanity.io/manage → API → Tokens](https://www.sanity.io/manage)
+2. Add token, name it `ded-blog-cli`, role `Editor`
+3. Copy the token (only shown once)
+4. Set `SANITY_WRITE_TOKEN=<token>` in your local `.env`
+
+## Studio deploy fails with hostname collision
+
+**Symptom.** `sanity deploy` errors saying the subdomain is taken.
+
+**Cause.** The `ded-blog.sanity.studio` hostname is claimed by our project. If you're deploying from a fresh clone or a different account, you'll hit this.
+
+**Fix.** Edit `studio/sanity.cli.ts` and change `studioHost: "ded-blog"` to your preferred subdomain.
+
+## MDX file in the archive/ folder appearing on the site
+
+**Symptom.** Old MDX seed content shows up as a live post.
+
+**Cause.** Files under `archive/seed-mdx/` should not be consumed. But if you accidentally moved one back into `src/content/blog/`, it becomes a live MDX post that overlays whatever's in Sanity (Sanity wins on slug conflict, but only if the slug matches exactly).
+
+**Fix.** Keep `src/content/blog/` empty except for the `.keep` file. Move any MDX seeds to `archive/`.
+
+## Cloudflare Pages deploy hook returns 500
+
+**Symptom.** Hitting the deploy hook URL directly returns HTTP 500.
+
+**Cause.** The Pages project isn't Git-connected (it uses direct uploads via wrangler), so Cloudflare has no source to build from when the deploy hook fires.
+
+**Fix.** Don't use the Pages deploy hook for this project. Use the GitHub `repository_dispatch` endpoint instead — the Sanity webhook is already wired to it.
+
+## The site builds but everything is unstyled
+
+**Symptom.** Post renders but looks like an unstyled Markdown document.
+
+**Cause.** Either the CSS file isn't loading, or the classes on the rendered HTML don't match. Common when portable text components don't emit the expected class names.
+
+**Fix.** Confirm `src/styles/global.css` is imported in `BaseLayout.astro`. Confirm the rendered HTML has `<article class="prose">` wrapping the content.

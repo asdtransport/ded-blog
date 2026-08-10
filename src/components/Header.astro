@@ -10,6 +10,7 @@ const isActive = (href: string) => pathname === href || (href !== "/" && pathnam
   <nav class="site-nav" aria-label="Primary">
     <a href="/blog" class={isActive("/blog") ? "active" : ""}>Blog</a>
     <a href="/projects" class={isActive("/projects") ? "active" : ""}>Projects</a>
+    <a href="/docs" class={isActive("/docs") ? "active" : ""}>Docs</a>
     <a href="/about" class={isActive("/about") ? "active" : ""}>About</a>
   </nav>
   <div class="site-header-right">

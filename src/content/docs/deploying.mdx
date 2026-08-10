@@ -1,0 +1,83 @@
+---
+title: "Deploying"
+description: "How code changes and content changes both make it to production."
+group: "Operations"
+order: 40
+---
+
+Two kinds of change flow through this site: **code changes** (git push) and **content changes** (Sanity publish). Both end at Cloudflare Pages. The route is different.
+
+## Code changes → GitHub Actions
+
+Every push to `main` triggers `.github/workflows/deploy.yml`. The workflow:
+
+1. Checks out the repo
+2. Sets up Bun
+3. Installs deps (`bun install --frozen-lockfile`)
+4. Builds (`bun run build`) with the Sanity secrets available
+5. Deploys `dist/` to Cloudflare Pages via `wrangler pages deploy`
+
+Watch runs at [github.com/asdtransport/ded-blog/actions](https://github.com/asdtransport/ded-blog/actions).
+
+## Content changes → Sanity webhook
+
+Every publish (create / update / delete) in Sanity fires a webhook to GitHub's `repository_dispatch` endpoint. GitHub receives `event_type: sanity-publish` and runs the same deploy workflow.
+
+The webhook config lives in Sanity — visible at [sanity.io/manage → API → Webhooks](https://www.sanity.io/manage). The filter is:
+
+```
+_type in ["post","page","project","author"]
+```
+
+So changes to any of the four document types trigger a build. Draft edits do **not** trigger a build (the webhook has `includeDrafts: false`).
+
+## Secrets
+
+Four secrets live in the GitHub repo's Actions vault:
+
+| Name | Used for |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | wrangler auth |
+| `CLOUDFLARE_ACCOUNT_ID` | wrangler target |
+| `PUBLIC_SANITY_PROJECT_ID` | Astro build fetches content |
+| `PUBLIC_SANITY_DATASET` | Astro build fetches content |
+| `SANITY_READ_TOKEN` | Authenticated read of published content at build time |
+
+The `SANITY_READ_TOKEN` is **not** `PUBLIC_`-prefixed, so it stays server-only. Vite never bundles it into the client output. Verified with `grep -r sk dist/` returning nothing.
+
+## Manual deploy
+
+If the webhook path fails or you just want to force a build:
+
+```bash
+# From your local machine, needing gh cli
+gh workflow run deploy.yml -R asdtransport/ded-blog
+
+# Or via curl
+curl -X POST \
+  -H "Authorization: Bearer $GH_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/asdtransport/ded-blog/dispatches \
+  -d '{"event_type":"sanity-publish"}'
+```
+
+## Custom domain
+
+The Cloudflare Pages project serves at `ded-blog.pages.dev`. To activate a custom domain (currently pointing at `blog.derekethandavis.com` in `astro.config.mjs`):
+
+1. Cloudflare dashboard → Pages → `ded-blog` → **Custom domains**
+2. Add `blog.derekethandavis.com`
+3. CNAME auto-provisions (the zone is in the same account)
+
+The canonical URLs in the built HTML already point at `blog.derekethandavis.com`, so no code change needed once DNS is live.
+
+## Studio deploys
+
+The Sanity Studio is a separate deploy:
+
+```bash
+cd studio
+bun run deploy   # ships to ded-blog.sanity.studio
+```
+
+Only redeploy the Studio when you change **schemas** (in `studio/schemas/`). Content edits don't need a Studio redeploy — Studio always reads live data from Sanity.

@@ -1,0 +1,92 @@
+---
+title: "Content model"
+description: "Every document type, every field, what it does."
+group: "Content"
+order: 30
+---
+
+The Sanity schemas live in `studio/schemas/index.ts`. Four document types.
+
+## `post`
+
+The workhorse. Every blog article is one of these.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `title` | string | yes | Post title |
+| `slug` | slug | yes | Auto-derived from title; edit if you want |
+| `description` | text (2 rows) | yes | Meta description, OG description, card summary. ≤200 chars |
+| `tldr` | text (3 rows) | no | Surfaces as `<meta tldr>` for AI summarizers + blockquote at post top |
+| `pubDate` | datetime | yes | Publish date shown on the post |
+| `updatedDate` | datetime | no | Optional last-updated marker |
+| `author` | reference → `author` | no | Author bio |
+| `category` | string (dropdown) | no | One of: AI Agents, Engineering, Cloudflare, MSP, Meta, Philosophy |
+| `tags` | string[] | no | Free-form tag list |
+| `keywords` | string[] | no | Becomes `<meta keywords>` for SEO |
+| `heroImage` | image (hotspot) | no | Full-width banner + og:image |
+| `body` | portable text | no | The article content |
+| `draft` | boolean | no | Default `true` in Studio, `false` from CLI |
+
+### Body block types
+
+Portable text with these types:
+
+- **block** (paragraph, H2, H3, blockquote) with marks: strong, em, code, link
+- **image** with hotspot support (crops cleanly on any aspect ratio)
+- **codeBlock** — custom object with `language`, `code`, `filename`
+
+## `page`
+
+For static pages (About, Uses, Now, colophon).
+
+| Field | Type | Required |
+|---|---|---|
+| `title` | string | yes |
+| `slug` | slug | yes |
+| `description` | text | no |
+| `updatedDate` | datetime | no |
+| `body` | portable text | no |
+| `draft` | boolean | no |
+
+Every page in Sanity gets an automatic route at `/{slug}` on the site (except `/about`, which has a dedicated route).
+
+## `author`
+
+Bio + socials for post attribution.
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Display name |
+| `slug` | slug | For future author archive pages |
+| `role` | string | Shows under name on posts ("Lead Engineer · Builder") |
+| `bio` | text | Long bio |
+| `avatar` | image | Not currently rendered on posts (uses initials) |
+| `socials.github` | url | |
+| `socials.twitter` | url | |
+| `socials.website` | url | |
+
+## `project`
+
+Public build-work entries shown on `/projects`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Project name |
+| `slug` | slug | For future project detail pages |
+| `tagline` | text (2 rows) | One-sentence description |
+| `status` | string (dropdown) | Active / Live / Alpha / Paused / Archived |
+| `url` | url | Where to send visitors (GitHub, live site, etc.) |
+| `stack` | string[] | Tech tags shown on the card |
+| `order` | number | Lower = higher on the page |
+
+## Field-to-render mapping
+
+Everything renders through `src/lib/sanity.ts`. If you want a new field to appear on the site:
+
+1. Add it to the schema in `studio/schemas/index.ts`
+2. Add it to `POST_PROJECTION` (or `page`/`project` projection) in `src/lib/sanity.ts`
+3. Add it to `UnifiedPost.data` type
+4. Add it to `mapPost` so it flows into the interface
+5. Reference it in the layout that renders it (`BlogPost.astro`, `index.astro`, etc.)
+
+Deploy the schema change (`cd studio && bun run deploy`), publish a document that uses the field, and it appears on the site after the next build.

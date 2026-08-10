@@ -2,8 +2,6 @@ import { defineCollection, z } from "astro:content";
 
 // MDX fallback collections — kept so getCollection() stays defined.
 // Primary source of truth is Sanity CMS (see src/lib/content.ts).
-// Add MDX files here only if you want them alongside Sanity content;
-// Sanity wins on slug conflict.
 
 const blog = defineCollection({
   type: "content",
@@ -23,4 +21,16 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+// Docs — MDX-based, sits at /docs/*. Order controls sidebar ordering.
+const docs = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    group: z.string().default("General"),
+    order: z.number().default(100),
+    updatedDate: z.coerce.date().optional(),
+  }),
+});
+
+export const collections = { blog, docs };

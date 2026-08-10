@@ -1,0 +1,129 @@
+---
+title: "Publishing from the CLI"
+description: "One command, one markdown file, one deploy. No browser needed."
+group: "Publishing"
+order: 20
+---
+
+The `bun run publish` command reads a markdown file with frontmatter and creates a corresponding `post` document in Sanity. The existing Sanity webhook takes it from there.
+
+## The command
+
+```bash
+bun run publish drafts/my-post.md
+```
+
+## The file shape
+
+A publish-ready markdown file looks like this:
+
+```md
+---
+title: "Shipping posts from the command line"
+description: "A short note on the CLI publish flow."
+category: "Meta"
+tags: ["CLI", "Sanity"]
+tldr: "Writing directly to Sanity via the publish script — no Studio, no git commit."
+keywords: ["Sanity CLI", "content pipeline"]
+pubDate: 2026-08-15
+---
+
+The Sanity Studio is nice, but sometimes I want to write in vim and ship...
+
+## How it works
+
+...body markdown here...
+```
+
+The frontmatter is parsed and mapped straight onto the Sanity `post` schema. Any field can be omitted except `title` and `description`.
+
+## Frontmatter fields
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `title` | string | yes | Post title |
+| `description` | string | yes | Meta description + card summary (≤200 chars) |
+| `slug` | string | no | Auto-derived from title if omitted |
+| `pubDate` | date | no | Defaults to now |
+| `updatedDate` | date | no | Optional |
+| `category` | string | no | One of: AI Agents, Engineering, Cloudflare, MSP, Meta, Philosophy |
+| `tags` | string[] | no | Free-form |
+| `keywords` | string[] | no | SEO keywords (become `<meta keywords>`) |
+| `tldr` | string | no | Renders as blockquote at post top + `<meta tldr>` for AI summarizers |
+
+## Body support
+
+Markdown-to-portable-text handles the common cases:
+
+- Paragraphs
+- H2 / H3 headings (become anchor-linked in the TOC)
+- Fenced code blocks (with language) — rendered with our code-block styling
+- Blockquotes (`> `)
+- Unordered lists (`- `)
+- Inline: `**bold**`, `*italic*`, `` `code` ``, `[link](url)`
+
+Anything more exotic (tables, images inline in the body, footnotes) doesn't survive the conversion. For those, use the Studio.
+
+<div class="callout tip">
+<div class="callout-title">Tip</div>
+<p>Draft the body markdown anywhere — vim, VS Code, ChatGPT, Claude — then just save it to a `.md` file with frontmatter and publish.</p>
+</div>
+
+## Flags
+
+```bash
+bun run publish drafts/post.md --draft         # Mark as draft (won't appear on site)
+bun run publish drafts/post.md --replace       # Overwrite by slug (updates existing)
+bun run publish drafts/post.md --hero=hero.png # Upload image, set as hero
+bun run publish drafts/post.md --dry           # Print what would be sent, don't hit API
+```
+
+## Adding a hero image
+
+Give `--hero=path/to/image.png`. The script uploads the image to Sanity's asset store, gets back an asset reference, and attaches it to the post's `heroImage` field.
+
+```bash
+bun run publish drafts/post.md --hero=drafts/images/mcp-diagram.png
+```
+
+Cloudflare's `auto=format` gives you WebP/AVIF served automatically to browsers that support it.
+
+## What happens after publish
+
+```
+✓ Published: Shipping posts from the command line
+  _id:   Fmtvv18LW06CcKEX5YN01u
+  slug:  shipping-posts-from-the-command-line
+  draft: no
+
+Webhook will trigger a rebuild in ~5s. Live in ~90s at:
+  https://ded-blog.pages.dev/blog/shipping-posts-from-the-command-line
+```
+
+The Sanity webhook fires on document creation. GitHub Actions runs. Cloudflare Pages deploys. The page is live at the URL shown above within ~90 seconds. No further action needed.
+
+## Environment
+
+The script reads:
+
+```
+SANITY_PROJECT_ID=3onlytdh
+SANITY_DATASET=production
+SANITY_WRITE_TOKEN=sk...
+```
+
+The write token needs `Editor` or higher role on the Sanity project. Create one at [sanity.io/manage → API → Tokens](https://www.sanity.io/manage).
+
+<div class="callout warning">
+<div class="callout-title">Rotate the seed token</div>
+<p>The initial deploy used the developer token. For production CLI usage, create a dedicated `Editor` token scoped to `production` only, and set that as `SANITY_WRITE_TOKEN`.</p>
+</div>
+
+## Updating an existing post
+
+Two options:
+
+1. **By slug** — set `slug:` in the frontmatter to the existing post's slug and pass `--replace`. That overwrites the whole document at `post.<slug>`.
+2. **In the Studio** — open the post at `ded-blog.sanity.studio`, edit inline, publish. The Studio path handles partial edits better.
+
+For typo fixes and small tweaks, use the Studio. For full rewrites or content pipelines, use the CLI.

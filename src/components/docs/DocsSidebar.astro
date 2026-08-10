@@ -1,0 +1,48 @@
+---
+import { getCollection } from "astro:content";
+
+const currentPath = Astro.url.pathname.replace(/\/$/, "");
+
+const entries = (await getCollection("docs"))
+  .sort((a, b) => a.data.order - b.data.order);
+
+// Group by frontmatter `group`
+const grouped: Record<string, typeof entries> = {};
+for (const e of entries) {
+  (grouped[e.data.group] ??= []).push(e);
+}
+const groupOrder = ["Getting started", "Publishing", "Content", "Operations", "Reference", "General"];
+const groups = Object.keys(grouped).sort(
+  (a, b) => groupOrder.indexOf(a) - groupOrder.indexOf(b)
+);
+---
+<nav class="docs-sidebar" aria-label="Docs navigation">
+  <div class="docs-sidebar-header">
+    <a href="/docs" class="docs-sidebar-title">Docs</a>
+    <a href="/" class="docs-sidebar-back">← Site</a>
+  </div>
+
+  {groups.map(group => (
+    <div class="docs-sidebar-group">
+      <div class="docs-sidebar-group-label">{group}</div>
+      <ul>
+        {grouped[group].map(e => {
+          const href = `/docs/${e.slug}`;
+          const active = currentPath === href;
+          return (
+            <li>
+              <a href={href} class:list={["docs-sidebar-link", { active }]}>
+                {e.data.title}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ))}
+
+  <div class="docs-sidebar-footer">
+    <a href="https://github.com/asdtransport/ded-blog" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://ded-blog.sanity.studio/" target="_blank" rel="noopener">Studio ↗</a>
+  </div>
+</nav>

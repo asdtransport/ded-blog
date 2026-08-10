@@ -1,0 +1,60 @@
+---
+title: "Getting started"
+description: "The five-minute mental model of how ded-blog is built and where content lives."
+group: "Getting started"
+order: 10
+---
+
+The blog is an Astro site deployed to Cloudflare Pages. Content lives in Sanity. Every time you publish something in Sanity, a webhook fires a GitHub `repository_dispatch` event, GitHub Actions builds the site fresh with your new content, and Cloudflare Pages picks up the deploy.
+
+## The moving parts
+
+- **[Sanity](https://ded-blog.sanity.studio/)** — content lake. Holds `post`, `page`, `project`, and `author` documents. Project id: `3onlytdh`. Dataset: `production`.
+- **[GitHub](https://github.com/asdtransport/ded-blog)** — code and CI. Every push to `main` builds. Every Sanity publish also triggers a build via `repository_dispatch`.
+- **[Cloudflare Pages](https://ded-blog.pages.dev/)** — hosting. Static output from `astro build`, served from Cloudflare's edge.
+
+## The publish loop
+
+```
+       Studio or CLI
+             │
+             ▼
+        ┌─────────┐
+        │  Sanity │  — document created/updated
+        └────┬────┘
+             │  webhook
+             ▼
+        ┌─────────┐
+        │ GitHub  │  — repository_dispatch → CI workflow
+        └────┬────┘
+             │  builds astro, deploys via wrangler
+             ▼
+        ┌─────────┐
+        │ Pages   │  — new content live in ~90s
+        └─────────┘
+```
+
+## Two ways to publish
+
+1. **[From Studio](/docs/publishing-from-studio)** — visual editor at `ded-blog.sanity.studio`. Best for rich content or when you want to preview as you write.
+2. **[From the CLI](/docs/publishing-from-cli)** — one command against a markdown file. Best for AI-drafted content or when you want to write in your editor without touching a browser.
+
+Either path triggers the same downstream flow. There's no "correct" one — pick whichever fits the moment.
+
+## Local development
+
+```bash
+git clone https://github.com/asdtransport/ded-blog
+cd ded-blog
+cp .env.example .env    # add your Sanity project ID and read token
+bun install
+bun run dev             # http://localhost:4321
+```
+
+The dev server reads content from Sanity in real time (with the token). Everything else runs offline.
+
+## Where to go next
+
+- **[Publishing from the CLI](/docs/publishing-from-cli)** — the fastest way to add a post
+- **[Content model](/docs/content-model)** — every field on every document type
+- **[Troubleshooting](/docs/troubleshooting)** — when the loop doesn't loop

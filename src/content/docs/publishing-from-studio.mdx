@@ -1,0 +1,63 @@
+---
+title: "Publishing from Studio"
+description: "The visual editor path — best for rich content, images, and copy-editing."
+group: "Publishing"
+order: 21
+---
+
+Sanity Studio is at [**ded-blog.sanity.studio**](https://ded-blog.sanity.studio/). It's the same content lake the CLI writes to, just with a UI.
+
+## When to use Studio
+
+- You want to preview formatting as you write
+- The post has a hero image, embedded images, or complex layout
+- You're doing a small edit or typo fix
+- Someone else needs to edit content and shouldn't have to install `bun`
+
+## Publishing a post
+
+1. Open [ded-blog.sanity.studio](https://ded-blog.sanity.studio/)
+2. Sign in (Sanity account with editor rights on the project)
+3. Click **Post** in the left sidebar
+4. Click the **+** button (top-right)
+5. Fill out the fields (`title`, `description`, category, tags, body)
+6. Click **Publish** (bottom-right)
+
+The webhook fires. CI builds. The site updates in ~90 seconds. You can watch progress at [github.com/asdtransport/ded-blog/actions](https://github.com/asdtransport/ded-blog/actions).
+
+## Body editing
+
+The body field is a portable-text editor with:
+
+- Headings (H2, H3), blockquote
+- Bold, italic, code, links
+- Custom **Code Block** type with language + optional filename
+- Image blocks (with hotspot + alt text)
+
+<div class="callout tip">
+<div class="callout-title">Code blocks</div>
+<p>Insert a code block via the block-type dropdown. Set the language for correct syntax highlighting in the rendered post.</p>
+</div>
+
+## Hero image
+
+Every post supports one hero image (schema field `heroImage`). Upload from your machine or from Sanity's asset library. The site renders it as a full-width banner above the title and uses it as the `og:image` for social/AI previews.
+
+Recommended size: **1600×900** or larger, landscape orientation. Sanity's CDN handles resizing and format conversion.
+
+## Drafts
+
+Every document has a draft state. Toggle **Draft** on to keep it out of the published site. The site queries only non-draft documents at build time.
+
+## Editing existing posts
+
+Click any post in the list to open it. Edit inline. Click **Publish** to push changes. The webhook fires the same way as a new post.
+
+<div class="callout warning">
+<div class="callout-title">"Publish" vs "Save"</div>
+<p>Sanity autosaves drafts continuously. Only clicking <strong>Publish</strong> makes changes live to the site. If you don't see your edit on the site after a rebuild, check that you published (not just saved) the document.</p>
+</div>
+
+## Deleting
+
+Click the three-dot menu on a document → Delete. The webhook fires with `delete` trigger; the site rebuilds without that document. Deleted content stays in Sanity's history and can be restored via the API for ~30 days.
