@@ -1,0 +1,107 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SubscribeRow from "../../components/podcast/SubscribeRow.astro";
+import { getAllEpisodes } from "../../lib/content";
+
+const episodes = await getAllEpisodes(true);          // include drafts (they render as "Upcoming")
+const published = episodes.filter(e => !e.draft);
+const upcoming  = episodes.filter(e => e.draft);
+const latest    = published[0];
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+---
+<BaseLayout
+  title="dedwrong"
+  description="A podcast about the ways I've been dead wrong in production. AI agents, edge infrastructure, MSP work, and the specific mistakes I keep making."
+  keywords={["podcast", "dedwrong", "AI Agents", "Cloudflare", "engineering", "MSP"]}
+>
+  <section class="podcast-hero">
+    <div class="podcast-hero-inner">
+      <h1>dedwrong</h1>
+      <p class="podcast-tagline">
+        A podcast about the ways I've been dead wrong in production. AI agents,
+        edge infrastructure, MSP work, and the specific mistakes I keep making.
+      </p>
+      <SubscribeRow />
+    </div>
+  </section>
+
+  {latest && (
+    <section class="section">
+      <div class="section-inner">
+        <a href={`/dedwrong/${latest.slug}`} class="ep-feature">
+          <div class="ep-feature-meta">
+            <span class="ep-feature-label">dedwrong</span>
+            <span class="ep-feature-dot">·</span>
+            <time>{fmtDate(latest.publishedDate)}</time>
+            <span class="ep-feature-dot">·</span>
+            <span class="ep-feature-badge">Latest · Episode #{latest.number}</span>
+          </div>
+          <h2>{latest.title}</h2>
+          <p class="ep-feature-desc">{latest.description}</p>
+          <div class="ep-feature-foot">
+            <span>{latest.durationDisplay || "—"}</span>
+            {latest.tags.slice(0, 3).map(t => <span class="tag">{t}</span>)}
+            <span class="ep-feature-cta">Listen or read →</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  )}
+
+  {published.length > 1 && (
+    <section class="section section-tint">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2>Archive</h2>
+          <span class="ep-count">{published.length} episodes</span>
+        </div>
+        <div class="ep-list">
+          {published.slice(1).map(ep => (
+            <a href={`/dedwrong/${ep.slug}`} class="ep-card" data-reveal>
+              <div class="ep-card-meta">
+                <span class="ep-card-issue">Episode #{ep.number}</span>
+              </div>
+              <h3>{ep.title}</h3>
+              <p class="ep-card-desc">{ep.tagline || ep.description}</p>
+              <div class="ep-card-foot">
+                <time>{fmtDate(ep.publishedDate)}</time>
+                <span class="ep-card-dot">·</span>
+                <span>{ep.durationDisplay}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {upcoming.length > 0 && (
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-head">
+          <h2>Coming up</h2>
+          <span class="ep-count">{upcoming.length} in the queue</span>
+        </div>
+        <div class="ep-list">
+          {upcoming.map(ep => (
+            <div class="ep-card ep-card-upcoming">
+              <div class="ep-card-meta">
+                <span class="ep-card-issue">Episode #{ep.number}</span>
+                <span class="ep-card-status">Upcoming</span>
+              </div>
+              <h3>{ep.title}</h3>
+              <p class="ep-card-desc">{ep.tagline || ep.description}</p>
+              <div class="ep-card-foot">
+                <time>{fmtDate(ep.publishedDate)}</time>
+                <span class="ep-card-dot">·</span>
+                <span>~{Math.round((ep.durationSeconds || 0) / 60)} min</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+</BaseLayout>

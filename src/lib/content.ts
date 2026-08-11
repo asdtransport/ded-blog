@@ -262,3 +262,92 @@ export async function getChapter(bookSlug: string, chapterSlug: string): Promise
   const chapters = await getChaptersForBook(bookSlug);
   return chapters.find(c => c.slug === chapterSlug) || null;
 }
+
+// ─── Podcast Episodes ────────────────────────────
+export interface UnifiedEpisode {
+  slug: string;
+  number: number;
+  title: string;
+  tagline?: string;
+  description: string;
+  audioUrl?: string;
+  audioBytes?: number;
+  durationSeconds?: number;
+  durationDisplay?: string;   // "34:12" or "1:04:03"
+  publishedDate: Date;
+  kind: string;
+  season: number;
+  explicit: boolean;
+  guests: string[];
+  tags: string[];
+  cover?: string;
+  showNotesHtml: string;
+  chapters: { timestamp: string; title: string }[];
+  transcriptHtml: string;
+  headings: { depth: number; slug: string; text: string }[];
+  draft: boolean;
+}
+
+function fmtDuration(seconds: number | undefined): string {
+  if (!seconds) return "—";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function mapEpisode(r: any): UnifiedEpisode {
+  return {
+    slug: r.slug,
+    number: r.number,
+    title: r.title,
+    tagline: r.tagline,
+    description: r.description || "",
+    audioUrl: r.audioUrl,
+    audioBytes: r.audioBytes,
+    durationSeconds: r.durationSeconds,
+    durationDisplay: fmtDuration(r.durationSeconds),
+    publishedDate: new Date(r.publishedDate),
+    kind: r.kind || "full",
+    season: r.season || 1,
+    explicit: !!r.explicit,
+    guests: r.guests || [],
+    tags: r.tags || [],
+    cover: r.coverRef ? sanityImageUrl(r.coverRef) : undefined,
+    showNotesHtml: r.showNotes ? toHTML(r.showNotes, { components: portableTextComponents }) : "",
+    chapters: r.chapters || [],
+    transcriptHtml: r.transcript ? toHTML(r.transcript, { components: portableTextComponents }) : "",
+    headings: extractHeadings(r.showNotes || []),
+    draft: !!r.draft,
+  };
+}
+
+const EPISODE_PROJECTION = /* groq */ `{
+  "slug": slug.current,
+  number, title, tagline, description,
+  audioUrl, audioBytes, durationSeconds,
+  publishedDate, kind, season, explicit, guests, tags,
+  "coverRef": cover.asset._ref,
+  showNotes, chapters, transcript, draft
+}`;
+
+export async function getAllEpisodes(includeDrafts = false): Promise<UnifiedEpisode[]> {
+  if (!sanityEnabled || !sanity) return [];
+  const filter = includeDrafts
+    ? '_type == "episode" && !(_id in path("drafts.**"))'
+    : '_type == "episode" && !(_id in path("drafts.**")) && draft != true';
+  const results = await sanity.fetch<any[]>(
+    `*[${filter}] | order(number desc) ${EPISODE_PROJECTION}`
+  );
+  return results.map(mapEpisode);
+}
+
+export async function getEpisodeBySlug(slug: string): Promise<UnifiedEpisode | null> {
+  if (!sanityEnabled || !sanity) return null;
+  const raw = await sanity.fetch<any>(
+    `*[_type == "episode" && slug.current == $slug && !(_id in path("drafts.**"))][0] ${EPISODE_PROJECTION}`,
+    { slug }
+  );
+  return raw ? mapEpisode(raw) : null;
+}

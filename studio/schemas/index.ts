@@ -408,4 +408,111 @@ export const chapter = defineType({
   ],
 });
 
-export const schemaTypes = [post, page, author, project, product, course, book, chapter];
+// ─── PODCAST EPISODES ─────────────────────────────
+// Podcast: `dedwrong` — episode = one show. Number, title, slug, audio URL,
+// duration, publish date, show notes body, transcript body, guest, tags.
+export const episode = defineType({
+  name: "episode",
+  title: "Episode",
+  type: "document",
+  fields: [
+    defineField({ name: "number", type: "number", validation: r => r.required(), description: "Episode number, monotonic." }),
+    defineField({ name: "title", type: "string", validation: r => r.required() }),
+    defineField({
+      name: "slug", type: "slug",
+      options: { source: "title", maxLength: 96 },
+      validation: r => r.required(),
+    }),
+    defineField({ name: "tagline", type: "text", rows: 2, description: "One-line hook shown in cards." }),
+    defineField({ name: "description", type: "text", rows: 3, description: "Longer summary; shown on episode landing." }),
+    defineField({ name: "audioUrl", type: "url", description: "Direct MP3/AAC URL. R2, Cloudflare Stream, or a podcast host CDN." }),
+    defineField({ name: "audioBytes", type: "number", description: "File size in bytes — required by podcast RSS. Look it up once and paste." }),
+    defineField({
+      name: "durationSeconds", type: "number",
+      description: "Length in seconds. RSS emits HH:MM:SS.",
+    }),
+    defineField({ name: "publishedDate", type: "datetime", validation: r => r.required() }),
+    defineField({
+      name: "explicit", type: "boolean", initialValue: false,
+      description: "Sets <itunes:explicit> in the RSS feed.",
+    }),
+    defineField({
+      name: "kind", type: "string",
+      options: { list: ["full", "trailer", "bonus"] },
+      initialValue: "full",
+    }),
+    defineField({ name: "season", type: "number", initialValue: 1 }),
+    defineField({ name: "guests", type: "array", of: [defineArrayMember({ type: "string" })], description: "Guest names, if any." }),
+    defineField({
+      name: "cover", type: "image", options: { hotspot: true },
+      description: "Optional per-episode art. Falls back to show art.",
+    }),
+    defineField({
+      name: "tags", type: "array",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+    }),
+    defineField({
+      name: "showNotes", type: "array",
+      description: "The equivalent of blog body — links, chapters, references, expanded thoughts.",
+      of: [
+        defineArrayMember({
+          type: "block",
+          styles: [
+            { title: "Normal", value: "normal" },
+            { title: "H2", value: "h2" },
+            { title: "H3", value: "h3" },
+            { title: "Quote", value: "blockquote" },
+          ],
+          marks: {
+            decorators: [
+              { title: "Strong", value: "strong" },
+              { title: "Emphasis", value: "em" },
+              { title: "Code", value: "code" },
+            ],
+            annotations: [
+              {
+                name: "link", type: "object", title: "External link",
+                fields: [
+                  { name: "href", type: "url", title: "URL" },
+                  { name: "blank", type: "boolean", title: "Open in new tab" },
+                ],
+              },
+            ],
+          },
+        }),
+        defineArrayMember({ type: "image", options: { hotspot: true } }),
+      ],
+    }),
+    defineField({
+      name: "chapters", type: "array",
+      description: "Timestamped chapter markers. Optional but recommended.",
+      of: [defineArrayMember({
+        type: "object",
+        fields: [
+          { name: "timestamp", type: "string", title: "Timestamp (HH:MM:SS)" },
+          { name: "title", type: "string", title: "Title" },
+        ],
+      })],
+    }),
+    defineField({
+      name: "transcript", type: "array",
+      description: "Full transcript. SEO gold. Collapsed on the episode page.",
+      of: [defineArrayMember({ type: "block" })],
+    }),
+    defineField({ name: "draft", type: "boolean", initialValue: true }),
+  ],
+  preview: {
+    select: { number: "number", title: "title", subtitle: "publishedDate" },
+    prepare: ({ number, title, subtitle }) => ({
+      title: `#${number} — ${title}`,
+      subtitle: subtitle ? new Date(subtitle).toDateString() : "unpublished",
+    }),
+  },
+  orderings: [
+    { title: "Newest", name: "numDesc", by: [{ field: "number", direction: "desc" }] },
+    { title: "Oldest", name: "numAsc",  by: [{ field: "number", direction: "asc" }] },
+  ],
+});
+
+export const schemaTypes = [post, page, author, project, product, course, book, chapter, episode];

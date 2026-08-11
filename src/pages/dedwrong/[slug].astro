@@ -1,0 +1,141 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import AudioPlayer from "../../components/podcast/AudioPlayer.astro";
+import SubscribeRow from "../../components/podcast/SubscribeRow.astro";
+import TableOfContents from "../../components/TableOfContents.astro";
+import { getAllEpisodes, getEpisodeBySlug } from "../../lib/content";
+
+export async function getStaticPaths() {
+  const eps = await getAllEpisodes(true);
+  return eps.map(e => ({ params: { slug: e.slug } }));
+}
+
+const { slug } = Astro.params;
+const ep = await getEpisodeBySlug(slug!);
+if (!ep) throw new Error(`Episode not found: ${slug}`);
+
+const all = await getAllEpisodes(true);
+const idx = all.findIndex(e => e.slug === slug);
+const prev = idx > 0 ? all[idx - 1] : null;
+const next = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+---
+<BaseLayout
+  title={`Episode #${ep.number}: ${ep.title}`}
+  description={ep.description}
+  type="article"
+  pubDate={ep.publishedDate}
+  keywords={ep.tags}
+>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <div class="breadcrumbs-inner">
+      <a href="/">Home</a><span class="sep">›</span>
+      <a href="/dedwrong">dedwrong</a><span class="sep">›</span>
+      <span class="current">Episode #{ep.number}</span>
+    </div>
+  </nav>
+
+  <section class="ep-hero">
+    <div class="ep-hero-inner">
+      <div class="ep-hero-meta">
+        <span class="ep-hero-eyebrow">dedwrong · Episode #{ep.number}</span>
+        <span class="ep-hero-dot">·</span>
+        <time>{fmtDate(ep.publishedDate)}</time>
+        <span class="ep-hero-dot">·</span>
+        <span>{ep.durationDisplay}</span>
+        {ep.draft && (
+          <><span class="ep-hero-dot">·</span><span class="ep-hero-upcoming">Upcoming</span></>
+        )}
+      </div>
+      <h1>{ep.title}</h1>
+      {ep.tagline && <p class="lede">{ep.tagline}</p>}
+    </div>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
+    <div class="section-inner ep-body">
+      <div class="ep-main">
+        <AudioPlayer
+          src={ep.audioUrl}
+          title={`#${ep.number} — ${ep.title}`}
+          durationSeconds={ep.durationSeconds}
+          episodeId={ep.slug}
+        />
+
+        {ep.chapters.length > 0 && (
+          <div class="ep-chapters">
+            <div class="ep-chapters-head">Chapters</div>
+            <ol>
+              {ep.chapters.map(c => (
+                <li>
+                  <code>{c.timestamp}</code>
+                  <span>{c.title}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        <article class="prose ep-notes">
+          <h2 class="ep-notes-head">Show notes</h2>
+          {ep.showNotesHtml ? (
+            <Fragment set:html={ep.showNotesHtml} />
+          ) : (
+            <p><em>Show notes not yet published.</em></p>
+          )}
+
+          {ep.description && ep.description !== ep.tagline && (
+            <p class="ep-description-full">{ep.description}</p>
+          )}
+        </article>
+
+        {ep.transcriptHtml && (
+          <details class="ep-transcript">
+            <summary>Full transcript</summary>
+            <div class="ep-transcript-body">
+              <Fragment set:html={ep.transcriptHtml} />
+            </div>
+          </details>
+        )}
+
+        {(prev || next) && (
+          <nav class="ep-prev-next" aria-label="Episodes">
+            {prev ? (
+              <a href={`/dedwrong/${prev.slug}`} class="ep-pn-card">
+                <span class="ep-pn-label">← Previous</span>
+                <span class="ep-pn-title">#{prev.number} — {prev.title}</span>
+              </a>
+            ) : <span />}
+            {next ? (
+              <a href={`/dedwrong/${next.slug}`} class="ep-pn-card ep-pn-next">
+                <span class="ep-pn-label">Next →</span>
+                <span class="ep-pn-title">#{next.number} — {next.title}</span>
+              </a>
+            ) : <span />}
+          </nav>
+        )}
+      </div>
+
+      <aside class="ep-sidebar">
+        <div class="ep-sidebar-block">
+          <SubscribeRow />
+        </div>
+        {ep.headings.length > 0 && (
+          <div class="ep-sidebar-block ep-sidebar-toc">
+            <TableOfContents headings={ep.headings} />
+          </div>
+        )}
+        {ep.tags.length > 0 && (
+          <div class="ep-sidebar-block">
+            <div class="ep-sidebar-head">Tags</div>
+            <div class="ep-sidebar-tags">
+              {ep.tags.map(t => <span class="tag">{t}</span>)}
+            </div>
+          </div>
+        )}
+      </aside>
+    </div>
+  </section>
+</BaseLayout>

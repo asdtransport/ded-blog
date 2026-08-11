@@ -1,0 +1,165 @@
+---
+interface Props {
+  src?: string;
+  title: string;
+  durationSeconds?: number;
+  episodeId: string;
+}
+const { src, title, durationSeconds, episodeId } = Astro.props;
+
+const hasAudio = !!src;
+---
+<div class="audio-player" data-episode={episodeId} data-duration={durationSeconds}>
+  {hasAudio ? (
+    <>
+      <audio preload="metadata" src={src}></audio>
+      <div class="ap-main">
+        <button class="ap-play" aria-label={`Play ${title}`} type="button">
+          <svg class="ap-icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="ap-icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+        </button>
+        <div class="ap-controls">
+          <div class="ap-labels">
+            <span class="ap-title">{title}</span>
+            <span class="ap-times">
+              <span class="ap-current">0:00</span>
+              <span class="ap-sep">/</span>
+              <span class="ap-total">—</span>
+            </span>
+          </div>
+          <div class="ap-scrub" role="slider" aria-label="Seek" tabindex="0">
+            <div class="ap-buffer"></div>
+            <div class="ap-progress"></div>
+            <div class="ap-thumb"></div>
+          </div>
+        </div>
+        <div class="ap-extras">
+          <button class="ap-back" aria-label="Back 15 seconds" type="button">−15s</button>
+          <button class="ap-fwd" aria-label="Forward 30 seconds" type="button">+30s</button>
+          <button class="ap-speed" aria-label="Playback speed" type="button">1×</button>
+        </div>
+      </div>
+    </>
+  ) : (
+    <div class="ap-placeholder">
+      <div class="ap-placeholder-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </div>
+      <div>
+        <div class="ap-placeholder-title">Audio pending</div>
+        <div class="ap-placeholder-sub">Episode recorded, upload in progress. Show notes below are canonical.</div>
+      </div>
+    </div>
+  )}
+</div>
+
+<script>
+  (function () {
+    const player = document.querySelector<HTMLElement>(".audio-player[data-episode]");
+    if (!player) return;
+    const audio = player.querySelector<HTMLAudioElement>("audio");
+    if (!audio) return;
+    const episodeId = player.dataset.episode!;
+    const posKey = `ded:audio:pos:${episodeId}`;
+    const speedKey = `ded:audio:speed`;
+
+    const $ = (s: string) => player.querySelector<HTMLElement>(s)!;
+    const btnPlay = $(".ap-play");
+    const iconPlay = $(".ap-icon-play") as SVGElement | null;
+    const iconPause = $(".ap-icon-pause") as SVGElement | null;
+    const btnBack = $(".ap-back");
+    const btnFwd = $(".ap-fwd");
+    const btnSpeed = $(".ap-speed");
+    const scrub = $(".ap-scrub");
+    const progress = $(".ap-progress");
+    const buffer = $(".ap-buffer");
+    const thumb = $(".ap-thumb");
+    const tCurrent = $(".ap-current");
+    const tTotal = $(".ap-total");
+
+    const speeds = [1, 1.25, 1.5, 2, 0.75];
+    let speedIdx = 0;
+    try {
+      const saved = parseFloat(localStorage.getItem(speedKey) || "1");
+      const i = speeds.indexOf(saved);
+      if (i !== -1) speedIdx = i;
+    } catch {}
+    audio.playbackRate = speeds[speedIdx];
+    btnSpeed.textContent = `${speeds[speedIdx]}×`;
+
+    // Restore listen position
+    try {
+      const saved = parseFloat(localStorage.getItem(posKey) || "0");
+      if (saved > 0 && saved < 999999) audio.currentTime = saved;
+    } catch {}
+
+    const fmt = (s: number): string => {
+      if (!isFinite(s) || s < 0) s = 0;
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60);
+      if (h) return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+      return `${m}:${String(sec).padStart(2, "0")}`;
+    };
+
+    const setPlaying = (playing: boolean) => {
+      iconPlay!.style.display = playing ? "none" : "";
+      iconPause!.style.display = playing ? "" : "none";
+      btnPlay.setAttribute("aria-label", playing ? "Pause" : "Play");
+    };
+
+    btnPlay.addEventListener("click", () => {
+      if (audio.paused) audio.play();
+      else audio.pause();
+    });
+    audio.addEventListener("play", () => setPlaying(true));
+    audio.addEventListener("pause", () => setPlaying(false));
+    audio.addEventListener("ended", () => setPlaying(false));
+
+    audio.addEventListener("loadedmetadata", () => {
+      tTotal.textContent = fmt(audio.duration);
+    });
+    audio.addEventListener("timeupdate", () => {
+      const pct = (audio.currentTime / (audio.duration || 1)) * 100;
+      progress.style.width = `${pct}%`;
+      thumb.style.left = `${pct}%`;
+      tCurrent.textContent = fmt(audio.currentTime);
+      // Persist every ~2s
+      if (Math.floor(audio.currentTime) % 2 === 0) {
+        try { localStorage.setItem(posKey, String(audio.currentTime)); } catch {}
+      }
+    });
+    audio.addEventListener("progress", () => {
+      if (audio.buffered.length && audio.duration) {
+        const end = audio.buffered.end(audio.buffered.length - 1);
+        buffer.style.width = `${(end / audio.duration) * 100}%`;
+      }
+    });
+
+    btnBack.addEventListener("click", () => { audio.currentTime = Math.max(0, audio.currentTime - 15); });
+    btnFwd.addEventListener("click", () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 30); });
+    btnSpeed.addEventListener("click", () => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      audio.playbackRate = speeds[speedIdx];
+      btnSpeed.textContent = `${speeds[speedIdx]}×`;
+      try { localStorage.setItem(speedKey, String(speeds[speedIdx])); } catch {}
+    });
+
+    const seek = (evt: MouseEvent | TouchEvent) => {
+      const rect = scrub.getBoundingClientRect();
+      const x = "touches" in evt ? evt.touches[0].clientX : evt.clientX;
+      const pct = Math.min(1, Math.max(0, (x - rect.left) / rect.width));
+      if (audio.duration) audio.currentTime = pct * audio.duration;
+    };
+    let scrubbing = false;
+    scrub.addEventListener("mousedown", (e) => { scrubbing = true; seek(e as MouseEvent); });
+    document.addEventListener("mousemove", (e) => { if (scrubbing) seek(e); });
+    document.addEventListener("mouseup", () => { scrubbing = false; });
+    scrub.addEventListener("keydown", (e) => {
+      const kbe = e as KeyboardEvent;
+      if (kbe.key === "ArrowLeft") audio.currentTime = Math.max(0, audio.currentTime - 5);
+      if (kbe.key === "ArrowRight") audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+      if (kbe.key === " ") { e.preventDefault(); btnPlay.click(); }
+    });
+  })();
+</script>
