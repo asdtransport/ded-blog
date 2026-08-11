@@ -1,6 +1,6 @@
 ---
 name: ded-blog-publish
-description: Publish new posts, pages, or projects to Derek Ethan Davis's blog (ded-blog) via the Sanity Content Lake API. Use whenever the user wants to write, ship, publish, draft, or update content on their personal blog at blog.derekethandavis.com or ded-blog.pages.dev — even if they don't say "Sanity" or "CLI". Trigger on phrases like "publish a post about X", "add a new blog post", "ship this to the blog", "draft an article for ded-blog", "update my about page", "add a new project to my projects page". Handles markdown-to-portable-text conversion, hero image upload to Sanity's asset CDN, publish or draft mode, and relies on the existing Sanity webhook → GitHub repository_dispatch → Cloudflare Pages rebuild loop (no manual redeploy needed). Also handles pages and projects, not only posts.
+description: Publish new posts, pages, or projects to Derek Ethan Davis's blog (ded-blog) via the Sanity Content Lake API. Use whenever the user wants to write, ship, publish, draft, or update content on their personal blog at blog.derekethandavis.com or ded-blog.pages.dev — even if they don't say "Sanity" or "CLI". Also handles voice-note → draft flow via Cloudflare Whisper (bun run publish-audio path/to/audio.m4a). Trigger on phrases like "publish a post about X", "turn this voice note into a post", "transcribe this and publish", "commit this audio",, "add a new blog post", "ship this to the blog", "draft an article for ded-blog", "update my about page", "add a new project to my projects page". Handles markdown-to-portable-text conversion, hero image upload to Sanity's asset CDN, publish or draft mode, and relies on the existing Sanity webhook → GitHub repository_dispatch → Cloudflare Pages rebuild loop (no manual redeploy needed). Also handles pages and projects, not only posts.
 ---
 
 # ded-blog publisher
@@ -142,6 +142,46 @@ Should return `200`. If it returns `404`, check:
    ```
 2. Was `--draft` passed by accident? Draft posts don't appear on the site.
 3. Did the CI workflow run? Check `github.com/asdtransport/ded-blog/actions`.
+
+
+## Voice-to-draft flow — for phone voice memos
+
+Derek's fastest publishing loop: he records audio on his phone, drops the file, runs one command, gets a Sanity draft ready to review. Use this when the user mentions voice notes, audio, dictation, or "commit this audio."
+
+### Command
+
+```bash
+bun run publish-audio ~/Downloads/voice-note.m4a
+```
+
+### What it does
+
+1. Reads the audio file (m4a / mp3 / wav / mp4 / webm / ogg / flac, max 25MB)
+2. POSTs to Cloudflare Workers AI (`@cf/openai/whisper`) for transcription — needs `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` with Workers AI scope in env
+3. Structures the transcript: first sentence → title, next few → description + TL;DR, remainder → paragraph blocks
+4. Creates a **draft** in Sanity (add `--live` to publish immediately)
+5. Prints the Studio edit URL — Derek reviews, fixes Whisper misinterpretations, hits Publish
+
+### Flags
+
+- `--title="..."` — override the auto-title
+- `--category="AI Agents"` — override default (Engineering)
+- `--live` — skip the draft step
+- `--raw` — skip structuring, dump transcript as body verbatim
+- `--dry` — print what would be sent, don't hit the API
+
+### When to steer Derek toward this vs typing
+
+- Voice memo on phone → use voice CLI
+- At keyboard with code fences / tables → use text CLI
+- Emotional / stream-of-consciousness content → voice CLI (draft mode for review pass)
+
+### Whisper gotchas to warn about
+
+- Proper nouns get mangled (Sanity → "insanity" is a real one from testing)
+- Homophones slip through — always review the draft
+- Filler words survive ("so," "um") — edit in Studio
+- Paragraph grouping is heuristic-only (every 4 sentences) — reshape in Studio for readability
 
 ## Publishing a page (about / uses / now / etc.)
 

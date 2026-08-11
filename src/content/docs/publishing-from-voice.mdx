@@ -1,0 +1,102 @@
+---
+title: "Publishing from voice"
+description: "Record on your phone, run one command, get a Sanity draft ready to review. Transcription via Cloudflare Whisper."
+group: "Publishing"
+order: 22
+---
+
+The fastest way to get a thought out of your head and into the drafts queue: record it as audio, run one command. No typing, no Studio, no git.
+
+## What happens
+
+1. You record audio anywhere — Voice Memos on iOS, Recorder on Android, QuickTime on Mac, `arecord` on Linux
+2. You run `bun run publish-audio path/to/file.m4a`
+3. The CLI ships the audio to Cloudflare Workers AI (Whisper) for transcription
+4. It structures the transcript — first sentence becomes the title, next few become the description + TL;DR, the rest is grouped into paragraph blocks
+5. A **draft post** lands in Sanity with a Studio edit link printed to your terminal
+6. You review, polish, and hit Publish when it's ready
+
+## Command
+
+```bash
+bun run publish-audio ~/Downloads/voice-note.m4a
+```
+
+Output looks like this:
+
+```
+📼 voice-note.m4a · 857KB · m4a
+🎙  Transcribing via Cloudflare Whisper...
+   ✓ 55 words in 2.8s
+
+💾 Creating DRAFT post: "This is a voice note from the workshop"
+
+✓ Done
+  _id:    e0SvlUp2bPBVJv2KpcLRei
+  slug:   this-is-a-voice-note-from-the-workshop
+  status: DRAFT — review in Studio
+
+  Studio edit link:
+  https://ded-blog.sanity.studio/desk/post;e0SvlUp2bPBVJv2KpcLRei
+```
+
+Click the Studio link, do your editing, hit Publish. The webhook rebuilds the site.
+
+## Flags
+
+```bash
+--title="Override the auto-title"     # Skip title extraction
+--category="AI Agents"                 # Default: Engineering
+--live                                 # Publish immediately (default: draft)
+--raw                                  # Skip structuring, use raw transcript
+--dry                                  # Print what would be sent, don't hit API
+```
+
+## Formats supported
+
+Anything Whisper accepts: `.m4a`, `.mp3`, `.wav`, `.mp4`, `.webm`, `.ogg`, `.flac`. Max 25MB per file. If your recording is longer, split it — most voice memos under ~20 min will fit.
+
+## Environment
+
+The audio CLI reads:
+
+```
+SANITY_PROJECT_ID=3onlytdh
+SANITY_WRITE_TOKEN=sk...
+CLOUDFLARE_ACCOUNT_ID=d810128e93e1fd0f94b4948fd3edadfb
+CLOUDFLARE_API_TOKEN=cf-token-with-workers-ai-scope
+```
+
+The Cloudflare token needs **Workers AI Read** permission (or Account Read + Workers AI). Everything else uses tokens you already have configured for the text publish flow.
+
+## Recommended capture apps
+
+- **iOS**: Voice Memos is fine. Share → save to Files → run the CLI on your Mac against that path
+- **Android**: Google Recorder (does live transcription too — but Whisper is more accurate)
+- **Mac**: QuickTime, or `sox -d 60 out.wav` in the terminal for scripted captures
+
+<div class="callout tip">
+<div class="callout-title">Fastest workflow</div>
+<p>Record → AirDrop to your Mac's Downloads → open a terminal in the repo → <code>bun run publish-audio ~/Downloads/*.m4a</code>. Twenty seconds from thought to draft.</p>
+</div>
+
+## Why draft-by-default
+
+Whisper is good but not perfect. Proper nouns get mangled (Sanity → "insanity" is a real one), homophones slip through, and the paragraph grouping is heuristic-only. Landing as a draft gives you 30 seconds in the Studio to fix the two or three things Whisper missed before it goes public.
+
+If you're recording something short and low-stakes where you don't care about polish, add `--live` to skip the draft step.
+
+## Limits and edges
+
+- **25MB max per file** — Whisper API cap. About 20 minutes at reasonable quality.
+- **English works best.** Whisper supports 99 languages but I've only tuned the structuring heuristics for English.
+- **Filler words survive** — "so," "um," "you know" all transcribe. Edit them out in the Studio, or dictate more deliberately.
+- **Homophones need review** — always look at the first pass before publishing.
+- **The paragraph split** is dumb (every 4 sentences). If you want cleaner paragraphs, use `--raw` and structure it yourself in the Studio.
+
+## When to use this vs the text CLI
+
+- **Voice CLI** (`publish-audio`) — you're walking, driving, on a plane, or the thought is more emotional than technical
+- **Text CLI** (`publish`) — you're at a keyboard, drafting alongside code, or the post has technical structure (code fences, tables) that voice won't produce
+
+Both write to the same Sanity dataset, both hit the same webhook, both produce the same downstream flow.

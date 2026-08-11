@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "deploy": "astro build && wrangler pages deploy dist --project-name=ded-blog",
     "publish": "bun run scripts/publish.ts",
+    "publish-audio": "bun run scripts/publish-audio.ts",
     "seed": "bun run scripts/seed-sanity.ts",
     "upload-audio": "bun run scripts/upload-audio.ts"
   },
