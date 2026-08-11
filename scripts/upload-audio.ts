@@ -36,6 +36,7 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
   bun run upload-audio <file>              upload to R2 (auto date prefix)
     --dir=<sub>                             top-level dir (default: voice)
     --key=<full/path.ext>                    use exact key, skip auto-prefix
+    --episode=<slug>                          also patch this dedwrong episode's audioUrl
     --content-type=<mime>                    override content-type
     --copy                                    pbcopy the URL when done (macOS)
     --dry                                     print action, don't upload
@@ -43,6 +44,7 @@ if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
 Ex:
     bun run upload-audio ~/Desktop/rant.m4a
     bun run upload-audio ~/Desktop/rant.m4a --dir=podcast --copy
+    bun run upload-audio ~/Recordings/ep-01.m4a --episode=welcome
 `);
   process.exit(0);
 }
@@ -109,7 +111,7 @@ let stdout = ""; let stderr = "";
 child.stdout.on("data", d => { const s = d.toString(); stdout += s; process.stdout.write(s); });
 child.stderr.on("data", d => { const s = d.toString(); stderr += s; process.stderr.write(s); });
 
-child.on("close", (code) => {
+child.on("close", async (code) => {
   if (code !== 0) { console.error("\n✗ Upload failed."); process.exit(code || 1); }
   const url = `${PRIMARY_HOST}/${key}`;
   const fallback = `${R2DEV_HOST}/${key}`;
@@ -120,6 +122,51 @@ child.on("close", (code) => {
   ${url}
   ${fallback}   (fallback until custom-domain SSL settles)
 `);
+
+  // ─── Optional: patch a dedwrong episode's audioUrl in one shot ───
+  const episodeSlug = flag("episode");
+  if (episodeSlug) {
+    const projectId = process.env.SANITY_PROJECT_ID;
+    const sanityToken = process.env.SANITY_WRITE_TOKEN || process.env.SANITY_TOKEN;
+    if (!projectId || !sanityToken) {
+      console.error("  ! --episode requires SANITY_PROJECT_ID and SANITY_WRITE_TOKEN in env.");
+    } else {
+      const bytes = size;
+      console.log(`  → patching episode.${episodeSlug} audioUrl…`);
+      // Find the episode by slug, then patch by _id (works whether id is deterministic or generated)
+      const findRes = await fetch(
+        `https://${projectId}.api.sanity.io/v2024-01-01/data/query/production?query=${encodeURIComponent(`*[_type=="episode" && slug.current=="${episodeSlug}"][0]._id`)}`,
+        { headers: { Authorization: `Bearer ${sanityToken}` } }
+      );
+      const findJson: any = await findRes.json();
+      const epId: string | null = findJson?.result || null;
+      if (!epId) {
+        console.error(`  ! episode with slug "${episodeSlug}" not found in Sanity.`);
+      } else {
+        const patchRes = await fetch(
+          `https://${projectId}.api.sanity.io/v2024-01-01/data/mutate/production`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${sanityToken}` },
+            body: JSON.stringify({
+              mutations: [{
+                patch: {
+                  id: epId,
+                  set: { audioUrl: url, audioBytes: bytes },
+                },
+              }],
+            }),
+          }
+        );
+        const patchJson: any = await patchRes.json();
+        if (patchJson?.results?.length) {
+          console.log(`  ✓ episode "${episodeSlug}" updated. Site rebuilds via webhook in ~90s.`);
+        } else {
+          console.error(`  ! patch failed:`, JSON.stringify(patchJson).slice(0, 200));
+        }
+      }
+    }
+  }
 
   if (copy) {
     const cp = spawn("pbcopy", { stdio: ["pipe", "inherit", "inherit"] });

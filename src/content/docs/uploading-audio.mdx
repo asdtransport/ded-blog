@@ -86,6 +86,37 @@ In Sanity Studio:
 
 The rendered player is dark-themed, matches the code-block treatment, has the browser's native controls (play/pause, scrub, volume), and stays inline in the reading flow.
 
+## Publishing a dedwrong podcast episode
+
+For [dedwrong](/dedwrong) episodes specifically, the upload can patch the episode's `audioUrl` in Sanity in one shot:
+
+```bash
+bun run upload-audio ~/Recordings/ep-01.m4a --episode=welcome
+```
+
+Output:
+
+```
+  file:  /Users/derek/Recordings/ep-01.m4a
+  key:   voice/2026-08-11/ep-01.m4a
+  →      https://audio.derekethandavis.com/voice/2026-08-11/ep-01.m4a
+
+Uploading via wrangler...
+Upload complete.
+
+✓ Uploaded.
+
+  → patching episode.welcome audioUrl…
+  ✓ episode "welcome" updated. Site rebuilds via webhook in ~90s.
+```
+
+The Sanity webhook fires on the patch, CI rebuilds, and the dedwrong archive shows the episode with a real player. The custom audio player at `src/components/podcast/AudioPlayer.astro` handles play/pause, +30/-15s seeks, playback speed, and resumes position on repeat visits.
+
+<div class="callout tip">
+<div class="callout-title">Recording a podcast episode</div>
+<p>For dedwrong, aim for stable 128 kbps mono MP3 or 96 kbps AAC (m4a). Voice doesn't need stereo — a 30-minute episode at 128 kbps mono is ~28 MB. Quiet room, decent USB mic, and don't worry about polish. Clarity beats polish for a first season.</p>
+</div>
+
 ## Supported formats
 
 The CLI auto-picks the right MIME for these extensions:
