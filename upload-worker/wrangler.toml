@@ -1,24 +1,20 @@
 name = "ded-blog-upload"
 main = "src/index.ts"
 compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
 
-# R2 binding — the same bucket the CLI writes to.
-[[r2_buckets]]
-binding = "AUDIO"
-bucket_name = "ded-blog-audio"
-
-# Public vars (safe to see in logs / dashboard).
-[vars]
-PRIMARY_HOST = "https://audio.derekethandavis.com"
-SANITY_PROJECT_ID = "3onlytdh"
-SANITY_DATASET = "production"
-
-# Custom domain — deploys `upload.derekethandavis.com`
-# When you run `wrangler deploy`, this pattern gets auto-provisioned.
 routes = [
   { pattern = "upload.derekethandavis.com", custom_domain = true }
 ]
 
-# Secrets set via `wrangler secret put <NAME>`:
-#   UPLOAD_PASSWORD       — required by every API call
-#   SANITY_WRITE_TOKEN    — required for --episode patching
+[[r2_buckets]]
+binding = "AUDIO"
+bucket_name = "ded-blog-audio"
+
+[ai]
+binding = "AI"
+
+[vars]
+SANITY_PROJECT_ID = "3onlytdh"
+SANITY_DATASET = "production"
+CLOUDFLARE_ACCOUNT_ID = "d810128e93e1fd0f94b4948fd3edadfb"
