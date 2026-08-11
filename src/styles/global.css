@@ -1680,3 +1680,83 @@ main, article, .home-hero > *, .products-hero-inner > *, .courses-hero-inner > *
   .ap-main { grid-template-columns: auto 1fr; }
   .ep-prev-next { grid-template-columns: 1fr; }
 }
+
+/* ─── Audio embed (rendered inline in posts / chapters) ─────────── */
+.audio-embed {
+  margin: 24px 0;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 10px;
+  color: #e2e8f0;
+  border: 1px solid #1e293b;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.audio-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px;
+}
+.audio-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: rgba(94,234,212,0.12);
+  color: #5eead4;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.audio-meta {
+  flex: 1;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 0;
+}
+.audio-title {
+  font-family: var(--font-serif);
+  font-size: 16px; font-weight: 600;
+  color: #f8fafc;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.audio-duration {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(255,255,255,0.06);
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.audio-embed audio {
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+  filter: hue-rotate(120deg) saturate(0.6);  /* nudge the native control toward our brand */
+}
+.audio-embed audio::-webkit-media-controls-panel {
+  background: rgba(255,255,255,0.06);
+}
+.audio-transcript {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 10px;
+  font-size: 13.5px;
+  color: #cbd5e1;
+}
+.audio-transcript summary {
+  cursor: pointer;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  list-style: none;
+  padding: 4px 0;
+}
+.audio-transcript summary::before {
+  content: "▸ ";
+  transition: transform .15s ease;
+  display: inline-block;
+}
+.audio-transcript[open] summary::before { content: "▾ "; }
+.audio-transcript p {
+  margin: 8px 0;
+  line-height: 1.6;
+  color: #cbd5e1;
+}

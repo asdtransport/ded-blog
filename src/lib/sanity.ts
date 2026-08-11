@@ -65,6 +65,29 @@ export const portableTextComponents: Partial<PortableTextHtmlComponents> = {
       const url = `https://cdn.sanity.io/images/${projectId}/${dataset}/${id}-${dims}.${ext}`;
       return `<img src="${url}" alt="${escapeHtml(value.alt || "")}" loading="lazy" />`;
     },
+    audioEmbed: ({ value }: any) => {
+      if (!value?.url) return "";
+      const title = value.title ? escapeHtml(value.title) : "Audio";
+      const duration = value.duration ? escapeHtml(value.duration) : "";
+      const transcript = value.transcript ? escapeHtml(value.transcript) : "";
+      const durationBadge = duration ? `<span class="audio-duration">${duration}</span>` : "";
+      const transcriptBlock = transcript
+        ? `<details class="audio-transcript"><summary>Transcript</summary><p>${transcript.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br/>")}</p></details>`
+        : "";
+      return `<figure class="audio-embed">
+  <div class="audio-header">
+    <div class="audio-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+    </div>
+    <div class="audio-meta">
+      <div class="audio-title">${title}</div>
+      ${durationBadge}
+    </div>
+  </div>
+  <audio controls preload="metadata" src="${escapeHtml(value.url)}">Your browser does not support the audio element.</audio>
+  ${transcriptBlock}
+</figure>`;
+    },
   },
   block: {
     h2: ({ children, value }: any) => {

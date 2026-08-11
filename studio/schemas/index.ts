@@ -98,6 +98,23 @@ export const post = defineType({
             }),
           },
         }),
+        defineArrayMember({
+          name: "audioEmbed", type: "object", title: "Audio",
+          fields: [
+            { name: "url", type: "url", title: "Audio URL",
+              description: "Public URL of the file (uploaded via `bun run upload-audio` → https://audio.derekethandavis.com/…)." },
+            { name: "title", type: "string", title: "Title (optional)" },
+            { name: "duration", type: "string", title: "Duration display", description: "e.g. \"12:34\" — cosmetic, shown next to the title." },
+            { name: "transcript", type: "text", title: "Transcript (optional)", rows: 5 },
+          ],
+          preview: {
+            select: { title: "title", subtitle: "duration" },
+            prepare: ({ title, subtitle }) => ({
+              title: title || "Audio embed",
+              subtitle: subtitle ? `🔊 ${subtitle}` : "🔊",
+            }),
+          },
+        }),
       ],
     }),
     defineField({ name: "draft", type: "boolean", initialValue: true }),
@@ -390,6 +407,15 @@ export const chapter = defineType({
             { name: "language", type: "string", title: "Language" },
             { name: "code", type: "text", title: "Code" },
             { name: "filename", type: "string", title: "Filename (optional)" },
+          ],
+        }),
+        defineArrayMember({
+          name: "audioEmbed", type: "object", title: "Audio",
+          fields: [
+            { name: "url", type: "url", title: "Audio URL" },
+            { name: "title", type: "string", title: "Title (optional)" },
+            { name: "duration", type: "string", title: "Duration display" },
+            { name: "transcript", type: "text", title: "Transcript (optional)", rows: 5 },
           ],
         }),
       ],

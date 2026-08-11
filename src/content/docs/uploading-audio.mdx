@@ -1,0 +1,130 @@
+---
+title: "Uploading audio from your Mac"
+description: "Record on your MacBook, one command to R2, drop the URL into any post or chapter for inline playback."
+group: "Publishing"
+order: 22
+---
+
+Voice notes, podcast episodes, whatever — record on the Mac, run one command, get a public URL you can drop into any Sanity document for inline playback.
+
+## The pipeline in one paragraph
+
+Your file lives in a Cloudflare R2 bucket named `ded-blog-audio`, served publicly at [audio.derekethandavis.com](https://audio.derekethandavis.com). The `upload-audio` CLI wraps Wrangler's R2 command, computes a sane object key (`voice/<date>/<slug>.<ext>`), picks the right content-type, and prints the final URL when the upload lands.
+
+## Record it
+
+Use whatever you like — QuickTime Player is free and ships on every Mac.
+
+- Open QuickTime Player → File → **New Audio Recording** → record → **Save** as `.m4a`.
+- Or use Voice Memos.app for anything short and casual — sync from iPhone via iCloud if you recorded on the phone.
+- For "podcast-quality" episodes, use Audacity or Logic and export as MP3 (128–192 kbps mono for a talking-only track is plenty).
+
+## Upload it
+
+```bash
+bun run upload-audio ~/Desktop/rant.m4a
+```
+
+Output:
+
+```
+  file:  /Users/derek/Desktop/rant.m4a
+  size:  2841.2 KB
+  key:   voice/2026-08-11/rant.m4a
+  mime:  audio/mp4
+  →      https://audio.derekethandavis.com/voice/2026-08-11/rant.m4a
+
+Uploading via wrangler...
+Upload complete.
+
+✓ Uploaded.
+
+  https://audio.derekethandavis.com/voice/2026-08-11/rant.m4a
+  https://pub-baebfcfceb7141948e37ced9b9752d7b.r2.dev/voice/2026-08-11/rant.m4a   (fallback)
+```
+
+Copy the URL — you'll paste it into Sanity next.
+
+## Flags
+
+```bash
+bun run upload-audio rant.m4a --dir=podcast
+    → uploads to /podcast/2026-08-11/rant.m4a
+
+bun run upload-audio rant.m4a --key=episodes/ep-01.m4a
+    → uses your exact key, skips the auto date-prefix
+
+bun run upload-audio rant.m4a --copy
+    → after upload, pbcopy the URL to your clipboard (macOS)
+
+bun run upload-audio rant.m4a --dry
+    → print what would happen, don't upload
+```
+
+## Environment
+
+The script reads:
+
+```
+CLOUDFLARE_API_TOKEN=cfat_…
+CLOUDFLARE_ACCOUNT_ID=d810128e93e1fd0f94b4948fd3edadfb
+```
+
+Both live in your local `.env`. No extra R2-specific keys needed — Wrangler uses the same API token.
+
+## Drop it into a post
+
+In Sanity Studio:
+
+1. Open the post (or chapter) you want to add audio to
+2. In the **body** field, click the block-type dropdown → **Audio**
+3. Paste the URL. Optionally add:
+   - **Title** — e.g. "Behind the scenes of the MCP release"
+   - **Duration** — cosmetic display, e.g. "12:34"
+   - **Transcript** — optional, renders as an expandable section under the player
+4. Publish. The webhook fires, the site rebuilds, and the player appears inline.
+
+The rendered player is dark-themed, matches the code-block treatment, has the browser's native controls (play/pause, scrub, volume), and stays inline in the reading flow.
+
+## Supported formats
+
+The CLI auto-picks the right MIME for these extensions:
+
+| Extension | MIME | Notes |
+|---|---|---|
+| `.m4a` | `audio/mp4` | QuickTime default; universal support |
+| `.mp3` | `audio/mpeg` | Podcast standard |
+| `.wav` | `audio/wav` | Uncompressed; big |
+| `.ogg` / `.oga` | `audio/ogg` | Open format, less iOS support |
+| `.flac` | `audio/flac` | Lossless |
+| `.aac` | `audio/aac` | Similar to m4a |
+| `.opus` | `audio/opus` | Best quality-per-byte; poor Safari support |
+
+For video: `.mp4`, `.mov`, `.webm` also work. You'd wrap them in a `<video>` tag rather than the audio player — the current `audioEmbed` schema is audio-only; ping me if you want a matching `videoEmbed`.
+
+<div class="callout tip">
+<div class="callout-title">File size guidance</div>
+<p>For voice, aim for &lt; 30 MB per file. R2 has no per-file limit that would bite you (up to 4.995 TB per object), but big files load slowly on mobile. If you need long-form video, host on Cloudflare Stream instead — different product, actual video CDN with adaptive bitrate.</p>
+</div>
+
+## Where files live + who can see them
+
+- Bucket: `ded-blog-audio` (Cloudflare R2, ENAM location)
+- Public URL: `https://audio.derekethandavis.com/<key>` — anyone with the URL can play
+- Fallback URL: `https://pub-baebfcfceb7141948e37ced9b9752d7b.r2.dev/<key>` — same file, works during custom-domain SSL provisioning (~15 minutes on first setup)
+
+R2 has no egress fees, so you pay nothing on plays. Storage is $0.015/GB/month. A 10 MB file costs $0.00015/month to store. You will never notice this on your bill.
+
+## Deleting / listing
+
+For now: use Wrangler directly.
+
+```bash
+# List everything in the bucket
+bunx wrangler r2 object list ded-blog-audio --remote
+
+# Delete a specific object
+bunx wrangler r2 object delete ded-blog-audio/voice/2026-08-11/rant.m4a --remote
+```
+
+If you delete an object that's referenced in a published post, the audio player will show a broken source. Best practice: delete in Studio first (remove the block from the post), publish, then delete the R2 object.
